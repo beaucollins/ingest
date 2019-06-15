@@ -1,0 +1,13 @@
+image: elixir:latest
+
+services:
+  - postgres:latest
+
+variables:
+  MIX_ENV: "test"
+
+before_script:
+  - mix deps.get
+mix:
+  script:
+  - mix test
