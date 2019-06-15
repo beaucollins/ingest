@@ -7,7 +7,9 @@ variables:
   MIX_ENV: "test"
 
 before_script:
+  - mix local.hex --force
   - mix deps.get
+
 mix:
   script:
   - mix test
