@@ -17,7 +17,13 @@ defmodule Ingest do
   end
 
   def find_feed(urls) when is_list(urls) do
-    Enum.flat_map(urls, &find_feed/1)
+    Enum.map(urls, fn url ->
+      Task.async(fn ->
+        find_feed(url)
+      end)
+    end)
+    |> Enum.map(&Task.await/1)
+    |> List.flatten
   end
 
   def find_feed(url) do
