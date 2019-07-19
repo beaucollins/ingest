@@ -1,5 +1,5 @@
 defmodule Feed do
-  defstruct type: "application/rss+xml", title: "", url: ""
+  defstruct host: "", type: "application/rss+xml", title: "", url: ""
 
   def fetch(feed = %Feed{}) do
     IO.puts("Fetch feed " <> feed.url)

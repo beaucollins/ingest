@@ -2,10 +2,6 @@ defmodule IngestTest do
   use ExUnit.Case
   doctest Ingest
 
-  test "greets the world" do
-    assert Ingest.hello() == :world
-  end
-
   test "finds redirect location" do
     assert Ingest.location([{"Location", "http://other"}]) == "http://other"
     assert Ingest.location([{"location", "http://other"}]) == "http://other"

@@ -1,20 +1,4 @@
 defmodule Ingest do
-  @moduledoc """
-  Documentation for Ingest.
-  """
-
-  @doc """
-  Hello world.
-
-  ## Examples
-
-      iex> Ingest.hello()
-      :world
-
-  """
-  def hello do
-    :world
-  end
 
   def find_feed(urls) when is_list(urls) do
     Enum.map(urls, fn url ->
@@ -27,8 +11,10 @@ defmodule Ingest do
   end
 
   def find_feed(url) do
+    IO.puts "Searching " <> url
     case HTTPoison.get(url) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
+        IO.puts "Parsing response " <> url
         find_feed_in_html(body)
 
       {:ok, %HTTPoison.Response{status_code: code, headers: headers}}
