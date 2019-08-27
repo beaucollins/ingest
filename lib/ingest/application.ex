@@ -8,10 +8,6 @@ defmodule Ingest.Application do
   def start(_type, _args) do
     # List all child processes to be supervised
     children = [
-      # Start the Ecto repository
-      Ingest.Repo,
-      # Start the endpoint when the application starts
-      IngestWeb.Endpoint
       # Starts a worker by calling: Ingest.Worker.start_link(arg)
       # {Ingest.Worker, arg},
     ]
@@ -24,8 +20,7 @@ defmodule Ingest.Application do
 
   # Tell Phoenix to update the endpoint configuration
   # whenever the application is updated.
-  def config_change(changed, _new, removed) do
-    IngestWeb.Endpoint.config_change(changed, removed)
+  def config_change(_changed, _new, _removed) do
     :ok
   end
 end

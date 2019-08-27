@@ -1,4 +1,5 @@
 defmodule Ingest.Discovery do
+  alias Ingest.Feed
 
   def find_feed(urls) when is_list(urls) do
     Enum.map(urls, fn url ->

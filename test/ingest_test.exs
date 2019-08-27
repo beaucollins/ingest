@@ -1,11 +1,14 @@
 defmodule IngestTest do
+  alias Ingest.Feed
+  alias Ingest.Discovery
+
   use ExUnit.Case
 
-  doctest Ingest.Discovery
+  doctest Discovery
 
   test "finds redirect location" do
-    assert Ingest.Discovery.location([{"Location", "http://other"}]) == "http://other"
-    assert Ingest.Discovery.location([{"location", "http://other"}]) == "http://other"
+    assert Discovery.location([{"Location", "http://other"}]) == "http://other"
+    assert Discovery.location([{"location", "http://other"}]) == "http://other"
   end
 
   test "finds feed url in document" do
@@ -18,7 +21,7 @@ defmodule IngestTest do
         <body><p>Hi</p></body>
       </html>"
 
-    assert Ingest.Discovery.find_feed_in_html(document) === [
+    assert Discovery.find_feed_in_html(document) === [
              %Feed{url: "https://mock.host", title: "Feed Title"}
            ]
   end
@@ -27,7 +30,10 @@ defmodule IngestTest do
     document = "<body><a class=\"\" href=\"hello\" /><a href=\"other\" /></body>"
 
     found =
-      Ingest.Discovery.find_element(:mochiweb_html.parse(document), Ingest.Discovery.contains_attribute("class"))
+      Discovery.find_element(
+        :mochiweb_html.parse(document),
+        Discovery.contains_attribute("class")
+      )
 
     assert found === [{"a", [{"class", ""}, {"href", "hello"}], []}]
   end
@@ -38,9 +44,9 @@ defmodule IngestTest do
 
     found =
       document
-      |> Ingest.Discovery.find_element(
-        Ingest.Discovery.contains_attribute("class")
-        |> Ingest.Discovery.and_matches(Ingest.Discovery.element_name_is("a"))
+      |> Discovery.find_element(
+        Discovery.contains_attribute("class")
+        |> Discovery.and_matches(Discovery.element_name_is("a"))
       )
 
     assert found === [{"a", [{"class", ""}, {"href", "hello"}], []}]

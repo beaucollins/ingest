@@ -7,23 +7,10 @@
 # General application configuration
 use Mix.Config
 
-config :ingest,
-  ecto_repos: [Ingest.Repo]
-
-# Configures the endpoint
-config :ingest, IngestWeb.Endpoint,
-  url: [host: "localhost"],
-  secret_key_base: "y7y+UnKShGrhDGpoX4pvJxZ4+pF30DLkqjfxIjJ/k7k0hgQff7uc9Up8xsA10Wgz",
-  render_errors: [view: IngestWeb.ErrorView, accepts: ~w(html json)],
-  pubsub: [name: Ingest.PubSub, adapter: Phoenix.PubSub.PG2]
-
 # Configures Elixir's Logger
 config :logger, :console,
   format: "$time $metadata[$level] $message\n",
   metadata: [:request_id]
-
-# Use Jason for JSON parsing in Phoenix
-config :phoenix, :json_library, Jason
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
