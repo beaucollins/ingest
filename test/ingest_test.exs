@@ -26,6 +26,11 @@ defmodule IngestTest do
            ]
   end
 
+  test "empty list of feeds when body is empty" do
+    assert Discovery.find_feed_in_html("  ") === []
+    assert Discovery.find_feed_in_html(nil) === []
+  end
+
   test "finds by attribute" do
     document = "<body><a class=\"\" href=\"hello\" /><a href=\"other\" /></body>"
 

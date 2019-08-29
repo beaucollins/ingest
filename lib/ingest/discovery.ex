@@ -27,14 +27,23 @@ defmodule Ingest.Discovery do
     end
   end
 
-  def find_feed_in_html(body) do
-    :mochiweb_html.parse(body)
-    |> find_element(
-      element_name_is("link")
-      |> and_matches(attribute_is("rel", "alternate"))
-      |> and_matches(contains_attribute("href"))
-    )
-    |> Enum.map(&node_as_feed/1)
+  def find_feed_in_html(nil) do
+    []
+  end
+
+  def find_feed_in_html(body) when is_binary(body) do
+    case String.trim(body) do
+      "" ->
+        []
+      _ ->
+        :mochiweb_html.parse(body)
+        |> find_element(
+          element_name_is("link")
+          |> and_matches(attribute_is("rel", "alternate"))
+          |> and_matches(contains_attribute("href"))
+        )
+        |> Enum.map(&node_as_feed/1)
+    end
   end
 
   def find_element(node, matcher, acc \\ [])
