@@ -8,14 +8,15 @@ defmodule Ingest.Discovery do
       end)
     end)
     |> Enum.map(&Task.await/1)
-    |> List.flatten
+    |> List.flatten()
   end
 
   def find_feed(url) do
-    IO.puts "Searching " <> url
+    IO.puts("Searching " <> url)
+
     case HTTPoison.get(url) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        IO.puts "Parsing response " <> url
+        IO.puts("Parsing response " <> url)
         find_feed_in_html(body)
 
       {:ok, %HTTPoison.Response{status_code: code, headers: headers}}
@@ -35,6 +36,7 @@ defmodule Ingest.Discovery do
     case String.trim(body) do
       "" ->
         []
+
       _ ->
         :mochiweb_html.parse(body)
         |> find_element(
