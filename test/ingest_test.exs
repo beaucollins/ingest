@@ -56,4 +56,10 @@ defmodule IngestTest do
 
     assert found === [{"a", [{"class", ""}, {"href", "hello"}], []}]
   end
+
+  test "fetch and parse" do
+    assert Discovery.find_feed("http://test.blog") === [
+             %Feed{host: "http://test.blog", title: "LOL", type: nil, url: "/some/where"}
+           ]
+  end
 end

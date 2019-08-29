@@ -1,4 +1,5 @@
 defmodule Ingest.Feed do
+  @derive {Jason.Encoder, only: [:host, :title, :url, :type]}
   defstruct host: "", type: "application/rss+xml", title: "", url: ""
 
   def fetch(feed = %__MODULE__{}) do

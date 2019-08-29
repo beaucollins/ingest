@@ -19,7 +19,7 @@ defmodule Ingest.MixProject do
   # Type `mix help compile.app` for more information.
   def application do
     [
-      mod: {Ingest.Application, []},
+      mod: {Ingest.Application, [env: Mix.env()]},
       extra_applications: [:logger, :runtime_tools]
     ]
   end
@@ -34,7 +34,9 @@ defmodule Ingest.MixProject do
   defp deps do
     [
       {:httpoison, "~> 1.4"},
-      {:mochiweb, "~> 2.18.0"}
+      {:mochiweb, "~> 2.18.0"},
+      {:plug_cowboy, "~> 2.0"},
+      {:jason, "~> 1.1"}
     ]
   end
 

@@ -11,13 +11,26 @@ defmodule Ingest.Discovery do
     |> List.flatten()
   end
 
-  def find_feed(url) do
+  def find_feed(nil) do
+    []
+  end
+
+  @doc """
+  Fetches the URL and parses out potential RSS feeds.
+
+    iex> Ingest.Discovery.find_feed("http://awesome.blog")
+    [
+      %Feed{host: "http://awesome.blog", type: "application/rss+json", title: "So Awesome", url: "/feed.json"},
+      %Feed{host: "http://awesome.blog", type: "application/rss+xml", title: "So Awesome", url: "/feed.rss"}
+    ]
+  """
+  def find_feed(url) when is_binary(url) do
     IO.puts("Searching " <> url)
 
-    case HTTPoison.get(url) do
-      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        IO.puts("Parsing response " <> url)
-        find_feed_in_html(body)
+    case Ingest.Client.get(url) do
+      {:ok, %HTTPoison.Response{status_code: 200, body: body, request_url: request_url}} ->
+        IO.puts("Parsing response " <> request_url)
+        find_feed_in_html(body, request_url)
 
       {:ok, %HTTPoison.Response{status_code: code, headers: headers}}
       when code >= 300 and code <= 400 ->
@@ -28,23 +41,38 @@ defmodule Ingest.Discovery do
     end
   end
 
-  def find_feed_in_html(nil) do
+  def find_feed_in_html(document, document_url \\ "")
+
+  def find_feed_in_html(nil, _url) do
     []
   end
 
-  def find_feed_in_html(body) when is_binary(body) do
+  @doc """
+  Parses the feed links from an HTML binary.
+
+    iex> Ingest.Discovery.find_feed_in_html("<html><link rel=\\"alternate\\" title=\\"Feed\\" href=\\"lol\\"/></html>")
+    [%Ingest.Feed{title: "Feed", type: nil, url: "lol"}]
+
+    iex> Ingest.Discovery.find_feed_in_html("")
+    []
+
+  """
+  def find_feed_in_html(body, url) when is_binary(body) do
     case String.trim(body) do
       "" ->
         []
 
       _ ->
-        :mochiweb_html.parse(body)
+        document = :mochiweb_html.parse(body)
+        title = document_title(document)
+
+        document
         |> find_element(
           element_name_is("link")
           |> and_matches(attribute_is("rel", "alternate"))
           |> and_matches(contains_attribute("href"))
         )
-        |> Enum.map(&node_as_feed/1)
+        |> Enum.map(&node_as_feed(&1, title, url))
     end
   end
 
@@ -124,9 +152,10 @@ defmodule Ingest.Discovery do
     end
   end
 
-  def node_as_feed(node) do
+  def node_as_feed(node, title, url) do
     %Feed{
-      title: attribute(node, "title"),
+      host: url,
+      title: attribute(node, "title", title),
       url: attribute(node, "href"),
       type: attribute(node, "type")
     }
@@ -159,6 +188,33 @@ defmodule Ingest.Discovery do
 
       _ ->
         false
+    end
+  end
+
+  @doc """
+    iex> Ingest.Discovery.document_title(:mochiweb_html.parse("<html><title>Page title</title><html>"))
+    "Page title"
+  """
+  def document_title(fragment, defaultTo \\ "") do
+    fragment
+    |> find_element(element_name_is("title"))
+    |> node_content(defaultTo)
+    |> case do
+      [] -> defaultTo
+      [head | _rest] -> head
+    end
+  end
+
+  def node_content(fragment, defaultTo \\ "")
+
+  def node_content(fragment, defaultTo) when is_list(fragment) do
+    Enum.map(fragment, &node_content(&1, defaultTo))
+  end
+
+  def node_content({_type, _attributes, children}, defaultTo) do
+    case children do
+      [] -> defaultTo
+      _ -> Enum.reduce(children, &(&1 <> "\n" <> &2))
     end
   end
 end

@@ -5,17 +5,28 @@ defmodule Ingest.Application do
 
   use Application
 
-  def start(_type, _args) do
+  def start(_type, args) do
     # List all child processes to be supervised
     children = [
       # Starts a worker by calling: Ingest.Worker.start_link(arg)
       # {Ingest.Worker, arg},
+      {Plug.Cowboy, scheme: :http, plug: Ingest.Service}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: Ingest.Supervisor]
-    Supervisor.start_link(children, opts)
+
+    Supervisor.start_link(
+      case args do
+        [env: :test] ->
+          children ++ [{Plug.Cowboy, scheme: :http, plug: Ingest.Proxy, options: [port: 5431]}]
+
+        [_] ->
+          children
+      end,
+      opts
+    )
   end
 
   # Tell Phoenix to update the endpoint configuration
