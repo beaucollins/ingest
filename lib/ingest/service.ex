@@ -5,13 +5,16 @@ defmodule Ingest.Service do
   plug(Plug.Logger, log: :debug)
 
   plug(Plug.Parsers, parsers: [:urlencoded])
-  plug(:wtf)
+  plug(:dispatch)
 
-  def wtf(conn = %Conn{method: "POST"}, _opts) do
-    feed = Ingest.Discovery.find_feed(conn.params["url"])
+  def dispatch(conn = %Conn{method: "POST"}, _opts) do
+    feed = Ingest.Discovery.find_feeds(case conn.params["url"] do
+      urls when is_list(urls) -> urls
+      single -> [single]
+    end)
 
     conn
     |> Conn.put_resp_content_type("application/json")
-    |> Conn.send_resp(200, Jason.encode!(feed))
+    |> Conn.send_resp(200, Jason.encode!(Enum.map(feed, &Tuple.to_list/1)))
   end
 end

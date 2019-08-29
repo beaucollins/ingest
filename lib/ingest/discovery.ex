@@ -1,7 +1,7 @@
 defmodule Ingest.Discovery do
   alias Ingest.Feed
 
-  def find_feed(urls) when is_list(urls) do
+  def find_feeds(urls) do
     Enum.map(urls, fn url ->
       Task.async(fn ->
         find_feed(url)

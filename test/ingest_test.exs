@@ -64,7 +64,7 @@ defmodule IngestTest do
                 %Feed{host: "http://test.blog", title: "LOL", type: nil, url: "/some/where"}
               ]}
 
-    assert Discovery.find_feed(["http://gone.blog", "http://test.blog"]) === [
+    assert Discovery.find_feeds(["http://gone.blog", "http://test.blog"]) === [
       {:error, "http://gone.blog", 404},
       {:ok, "http://test.blog", [%Feed{host: "http://test.blog", title: "LOL", type: nil, url: "/some/where"}]},
     ]
