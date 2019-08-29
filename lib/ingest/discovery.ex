@@ -19,25 +19,25 @@ defmodule Ingest.Discovery do
   Fetches the URL and parses out potential RSS feeds.
 
     iex> Ingest.Discovery.find_feed("http://awesome.blog")
-    [
+    { :ok, "http://awesome.blog", [
       %Feed{host: "http://awesome.blog", type: "application/rss+json", title: "So Awesome", url: "/feed.json"},
       %Feed{host: "http://awesome.blog", type: "application/rss+xml", title: "So Awesome", url: "/feed.rss"}
-    ]
+    ] }
   """
   def find_feed(url) when is_binary(url) do
-    IO.puts("Searching " <> url)
-
     case Ingest.Client.get(url) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body, request_url: request_url}} ->
-        IO.puts("Parsing response " <> request_url)
-        find_feed_in_html(body, request_url)
+        {:ok, url, find_feed_in_html(body, request_url)}
 
       {:ok, %HTTPoison.Response{status_code: code, headers: headers}}
       when code >= 300 and code <= 400 ->
         case location(headers) do
-          nil -> {:error, "No location"}
+          nil -> {:error, url, :redirect}
           location -> find_feed(location)
         end
+
+      {:ok, %HTTPoison.Response{status_code: code}} ->
+        {:error, url, code}
     end
   end
 

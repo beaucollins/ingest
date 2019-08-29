@@ -58,8 +58,15 @@ defmodule IngestTest do
   end
 
   test "fetch and parse" do
-    assert Discovery.find_feed("http://test.blog") === [
-             %Feed{host: "http://test.blog", title: "LOL", type: nil, url: "/some/where"}
-           ]
+    assert Discovery.find_feed("http://test.blog") ===
+             {:ok, "http://test.blog",
+              [
+                %Feed{host: "http://test.blog", title: "LOL", type: nil, url: "/some/where"}
+              ]}
+
+    assert Discovery.find_feed(["http://gone.blog", "http://test.blog"]) === [
+      {:error, "http://gone.blog", 404},
+      {:ok, "http://test.blog", [%Feed{host: "http://test.blog", title: "LOL", type: nil, url: "/some/where"}]},
+    ]
   end
 end
