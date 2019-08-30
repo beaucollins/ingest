@@ -1,8 +1,13 @@
 defmodule Ingest.Discovery do
+  @moduledoc """
+  Given a URL or list of URLs, fetches the HTML and attempts to parse the
+  alternate content types provided as RSS feeds.
+  """
   import Traverse.Matcher
   alias Ingest.Feed
   alias Traverse.Document, as: Traverse
 
+  @spec find_feeds([String.t]) :: [{:ok, String.t, [Feed.T]} | {:error, String.t, Atom.t}]
   def find_feeds(urls) do
     Enum.map(urls, fn url ->
       Task.async(fn ->
@@ -14,7 +19,7 @@ defmodule Ingest.Discovery do
   end
 
   def find_feed(nil) do
-    []
+    {:error, nil, :missing_url}
   end
 
   @doc """
@@ -122,6 +127,8 @@ defmodule Ingest.Discovery do
   end
 
   @doc """
+  Retrieve the DOM Document's title
+
       iex> Ingest.Discovery.document_title(:mochiweb_html.parse("<html><title>Page title</title><html>"))
       "Page title"
   """

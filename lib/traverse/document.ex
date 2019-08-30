@@ -1,6 +1,6 @@
 defmodule Traverse.Document do
   @moduledoc """
-  Utilities for traversing a DOM from :mochiweb_html.parse/1.
+  Utilities for traversing a DOM from `:mochiweb_html.parse/1`.
   """
 
   @doc """
@@ -20,6 +20,7 @@ defmodule Traverse.Document do
 
   Find all nodes that are `<span>` elements and have a `class="important"` attribute:
 
+      iex> import Traverse.Matcher
       iex> :mochiweb_html.parse(\"\"\"
       ...>   <html>
       ...>     <span>Not important</span>
@@ -27,33 +28,14 @@ defmodule Traverse.Document do
       ...>     <div class="important"/>
       ...> \"\"\")
       ...> |> Traverse.Document.find_element(
-      ...>     Traverse.Matcher.attribute_is("class", "important")
-      ...>     |> Traverse.Matcher.and_matches(Traverse.Matcher.element_name_is("span"))
+      ...>     attribute_is("class", "important")
+      ...>     |> and_matches(element_name_is("span"))
       ...> )
       [{"span", [{"class", "important"}], ["Important"]}]
   """
-  def find_element(node, matcher, acc \\ [])
-
-  def find_element(fragment, matcher, acc) when is_list(fragment) do
-    Enum.reduce(fragment, acc, fn
-      node = {_element, _attributes, children}, matches ->
-        find_element(
-          children,
-          matcher,
-          if matcher.(node) do
-            [node | matches]
-          else
-            matches
-          end
-        )
-
-      _, matches ->
-        matches
-    end)
-  end
-
-  def find_element(node = {_element, _attributes, _children}, matcher, acc) do
-    find_element([node], matcher, acc)
+  @spec find_element(:mochiweb_html.html_node(), Matcher.matcher) :: [:mochiweb_html.html_node()]
+  def find_element(node, matcher) do
+    Traverse.Matcher.find(node, matcher)
   end
 
   def node_content(fragment, defaultTo \\ "")
