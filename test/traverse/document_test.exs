@@ -1,8 +1,10 @@
-defmodule Ingest.TraverseTest do
-  alias Ingest.Traverse
+defmodule Traverse.DocumentTest do
+  alias Traverse.Document
+  alias Traverse.Matcher
+
   use ExUnit.Case
 
-  doctest Ingest.Traverse
+  doctest Traverse.Document
 
   test "combines matchers" do
     document = """
@@ -14,9 +16,9 @@ defmodule Ingest.TraverseTest do
 
     found =
       document
-      |> Traverse.find_element(
-        Traverse.contains_attribute("class")
-        |> Traverse.and_matches(Traverse.element_name_is("a"))
+      |> Document.find_element(
+        Matcher.contains_attribute("class")
+        |> Matcher.and_matches(Matcher.element_name_is("a"))
       )
 
     assert found === [{"a", [{"class", ""}, {"href", "hello"}], []}]
@@ -30,9 +32,9 @@ defmodule Ingest.TraverseTest do
     """
 
     found =
-      Traverse.find_element(
+      Document.find_element(
         :mochiweb_html.parse(document),
-        Traverse.contains_attribute("class")
+        Matcher.contains_attribute("class")
       )
 
     assert found === [{"a", [{"class", ""}, {"href", "hello"}], []}]

@@ -1,6 +1,7 @@
 defmodule Ingest.Discovery do
+  import Traverse.Matcher
   alias Ingest.Feed
-  alias Ingest.Traverse
+  alias Traverse.Document, as: Traverse
 
   def find_feeds(urls) do
     Enum.map(urls, fn url ->
@@ -75,9 +76,9 @@ defmodule Ingest.Discovery do
 
         document
         |> Traverse.find_element(
-          Traverse.element_name_is("link")
-          |> Traverse.and_matches(Traverse.attribute_is("rel", "alternate"))
-          |> Traverse.and_matches(Traverse.contains_attribute("href"))
+          element_name_is("link")
+          |> and_matches(attribute_is("rel", "alternate"))
+          |> and_matches(contains_attribute("href"))
         )
         |> Enum.map(&node_as_feed(&1, title, url))
     end
@@ -126,7 +127,7 @@ defmodule Ingest.Discovery do
   """
   def document_title(fragment, defaultTo \\ "") do
     fragment
-    |> Traverse.find_element(Traverse.element_name_is("title"))
+    |> Traverse.find_element(element_name_is("title"))
     |> Traverse.node_content(defaultTo)
     |> case do
       [] -> defaultTo

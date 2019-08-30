@@ -1,4 +1,4 @@
-defmodule Ingest.Traverse do
+defmodule Traverse.Document do
   @moduledoc """
   Utilities for traversing a DOM from :mochiweb_html.parse/1.
   """
@@ -9,13 +9,13 @@ defmodule Ingest.Traverse do
   Find all nodes that have`id="two"`
 
       iex> :mochiweb_html.parse("<html><body><div /><div id=\\"two\\">Hello</div>")
-      ...> |> Ingest.Traverse.find_element(Ingest.Traverse.id_is("two"))
+      ...> |> Traverse.Document.find_element(Traverse.Matcher.id_is("two"))
       [{"div", [{"id", "two"}], ["Hello"]}]
 
   Find all nodes that are `<span>` elements:
 
       iex> :mochiweb_html.parse("<html><body><span>1</span><span>2</span><div><span>3</span></html>")
-      ...> |> Ingest.Traverse.find_element(Ingest.Traverse.element_name_is("span"))
+      ...> |> Traverse.Document.find_element(Traverse.Matcher.element_name_is("span"))
       [{"span", [], ["3"]}, {"span", [], ["2"]}, {"span", [], ["1"]}]
 
   Find all nodes that are `<span>` elements and have a `class="important"` attribute:
@@ -26,9 +26,9 @@ defmodule Ingest.Traverse do
       ...>     <span class="important">Important</span>
       ...>     <div class="important"/>
       ...> \"\"\")
-      ...> |> Ingest.Traverse.find_element(
-      ...>     Ingest.Traverse.attribute_is("class", "important")
-      ...>     |> Ingest.Traverse.and_matches(Ingest.Traverse.element_name_is("span"))
+      ...> |> Traverse.Document.find_element(
+      ...>     Traverse.Matcher.attribute_is("class", "important")
+      ...>     |> Traverse.Matcher.and_matches(Traverse.Matcher.element_name_is("span"))
       ...> )
       [{"span", [{"class", "important"}], ["Important"]}]
   """
@@ -56,31 +56,16 @@ defmodule Ingest.Traverse do
     find_element([node], matcher, acc)
   end
 
-  def element_name_is(name) do
-    fn
-      {element, _attributes, _children} when element == name ->
-        true
+  def node_content(fragment, defaultTo \\ "")
 
-      _ ->
-        false
-    end
+  def node_content(fragment, defaultTo) when is_list(fragment) do
+    Enum.map(fragment, &node_content(&1, defaultTo))
   end
 
-  def and_matches(fn1, fn2) do
-    fn value -> fn1.(value) && fn2.(value) end
-  end
-
-  def id_is(elementID) do
-    attribute_is("id", elementID)
-  end
-
-  def attribute_is(attributeName, attributeValue) do
-    fn
-      {_, atts, _} ->
-        Enum.find(atts, fn
-          {name, value} when attributeName == name and attributeValue == value -> true
-          _ -> false
-        end)
+  def node_content({_type, _attributes, children}, defaultTo) do
+    case children do
+      [] -> defaultTo
+      _ -> Enum.reduce(children, &(&1 <> "\n" <> &2))
     end
   end
 
@@ -95,35 +80,4 @@ defmodule Ingest.Traverse do
     end
   end
 
-  def contains_attribute(attributeName) do
-    fn
-      {_, [], _children} ->
-        false
-
-      {_, attributes, _children} when is_list(attributes) ->
-        Enum.find(attributes, fn
-          {name, _value} when name == attributeName ->
-            true
-
-          _ ->
-            false
-        end)
-
-      _ ->
-        false
-    end
-  end
-
-  def node_content(fragment, defaultTo \\ "")
-
-  def node_content(fragment, defaultTo) when is_list(fragment) do
-    Enum.map(fragment, &node_content(&1, defaultTo))
-  end
-
-  def node_content({_type, _attributes, children}, defaultTo) do
-    case children do
-      [] -> defaultTo
-      _ -> Enum.reduce(children, &(&1 <> "\n" <> &2))
-    end
-  end
 end
