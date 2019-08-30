@@ -8,10 +8,13 @@ defmodule Ingest.Service do
   plug(:dispatch)
 
   def dispatch(conn = %Conn{method: "POST"}, _opts) do
-    feed = Ingest.Discovery.find_feeds(case conn.params["url"] do
-      urls when is_list(urls) -> urls
-      single -> [single]
-    end)
+    feed =
+      Ingest.Discovery.find_feeds(
+        case conn.params["url"] do
+          urls when is_list(urls) -> urls
+          single -> [single]
+        end
+      )
 
     conn
     |> Conn.put_resp_content_type("application/json")

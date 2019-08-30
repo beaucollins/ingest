@@ -10,7 +10,14 @@ defmodule Ingest.MixProject do
       compilers: Mix.compilers(),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
-      deps: deps()
+      deps: deps(),
+      # Docs
+      name: "Ingest",
+      source_url: "https://gitlab.com/beaucollins/ingest",
+      docs: [
+        main: "Ingest",
+        extras: ["README.md"]
+      ]
     ]
   end
 
@@ -36,7 +43,8 @@ defmodule Ingest.MixProject do
       {:httpoison, "~> 1.4"},
       {:mochiweb, "~> 2.18.0"},
       {:plug_cowboy, "~> 2.0"},
-      {:jason, "~> 1.1"}
+      {:jason, "~> 1.1"},
+      {:ex_doc, "~>0.21", only: :dev, runtime: false}
     ]
   end
 

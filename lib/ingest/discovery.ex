@@ -19,11 +19,11 @@ defmodule Ingest.Discovery do
   @doc """
   Fetches the URL and parses out potential RSS feeds.
 
-    iex> Ingest.Discovery.find_feed("http://awesome.blog")
-    { :ok, "http://awesome.blog", [
-      %Feed{host: "http://awesome.blog", type: "application/rss+json", title: "So Awesome", url: "/feed.json"},
-      %Feed{host: "http://awesome.blog", type: "application/rss+xml", title: "So Awesome", url: "/feed.rss"}
-    ] }
+      iex> Ingest.Discovery.find_feed("http://awesome.blog")
+      { :ok, "http://awesome.blog", [
+        %Feed{host: "http://awesome.blog", type: "application/rss+json", title: "So Awesome", url: "/feed.json"},
+        %Feed{host: "http://awesome.blog", type: "application/rss+xml", title: "So Awesome", url: "/feed.rss"}
+      ] }
   """
   def find_feed(url) when is_binary(url) do
     case Ingest.Client.get(url) do
@@ -57,11 +57,11 @@ defmodule Ingest.Discovery do
   @doc """
   Parses the feed links from an HTML binary.
 
-    iex> Ingest.Discovery.find_feed_in_html("<html><link rel=\\"alternate\\" title=\\"Feed\\" href=\\"lol\\"/></html>")
-    [%Ingest.Feed{title: "Feed", type: nil, url: "lol"}]
+      iex> Ingest.Discovery.find_feed_in_html("<html><link rel=\\"alternate\\" title=\\"Feed\\" href=\\"lol\\"/></html>")
+      [%Ingest.Feed{title: "Feed", type: nil, url: "lol"}]
 
-    iex> Ingest.Discovery.find_feed_in_html("")
-    []
+      iex> Ingest.Discovery.find_feed_in_html("")
+      []
 
   """
   def find_feed_in_html(body, url) when is_binary(body) do
@@ -121,8 +121,8 @@ defmodule Ingest.Discovery do
   end
 
   @doc """
-    iex> Ingest.Discovery.document_title(:mochiweb_html.parse("<html><title>Page title</title><html>"))
-    "Page title"
+      iex> Ingest.Discovery.document_title(:mochiweb_html.parse("<html><title>Page title</title><html>"))
+      "Page title"
   """
   def document_title(fragment, defaultTo \\ "") do
     fragment

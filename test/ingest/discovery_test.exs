@@ -1,7 +1,6 @@
-defmodule IngestTest do
+defmodule DiscoveryTest do
   alias Ingest.Feed
   alias Ingest.Discovery
-  alias Ingest.Traverse
 
   use ExUnit.Case
 
@@ -32,32 +31,6 @@ defmodule IngestTest do
     assert Discovery.find_feed_in_html(nil) === []
   end
 
-  test "finds by attribute" do
-    document = "<body><a class=\"\" href=\"hello\" /><a href=\"other\" /></body>"
-
-    found =
-      Traverse.find_element(
-        :mochiweb_html.parse(document),
-        Traverse.contains_attribute("class")
-      )
-
-    assert found === [{"a", [{"class", ""}, {"href", "hello"}], []}]
-  end
-
-  test "combines matchers" do
-    document =
-      "<body><a class=\"\" href=\"hello\" /><a href=\"other\" /></body>" |> :mochiweb_html.parse()
-
-    found =
-      document
-      |> Traverse.find_element(
-        Traverse.contains_attribute("class")
-        |> Traverse.and_matches(Traverse.element_name_is("a"))
-      )
-
-    assert found === [{"a", [{"class", ""}, {"href", "hello"}], []}]
-  end
-
   test "fetch and parse" do
     assert Discovery.find_feed("http://test.blog") ===
              {:ok, "http://test.blog",
@@ -66,8 +39,9 @@ defmodule IngestTest do
               ]}
 
     assert Discovery.find_feeds(["http://gone.blog", "http://test.blog"]) === [
-      {:error, "http://gone.blog", 404},
-      {:ok, "http://test.blog", [%Feed{host: "http://test.blog", title: "LOL", type: nil, url: "/some/where"}]},
-    ]
+             {:error, "http://gone.blog", 404},
+             {:ok, "http://test.blog",
+              [%Feed{host: "http://test.blog", title: "LOL", type: nil, url: "/some/where"}]}
+           ]
   end
 end
