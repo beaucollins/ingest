@@ -1,6 +1,7 @@
 defmodule IngestTest do
   alias Ingest.Feed
   alias Ingest.Discovery
+  alias Ingest.Traverse
 
   use ExUnit.Case
 
@@ -35,9 +36,9 @@ defmodule IngestTest do
     document = "<body><a class=\"\" href=\"hello\" /><a href=\"other\" /></body>"
 
     found =
-      Discovery.find_element(
+      Traverse.find_element(
         :mochiweb_html.parse(document),
-        Discovery.contains_attribute("class")
+        Traverse.contains_attribute("class")
       )
 
     assert found === [{"a", [{"class", ""}, {"href", "hello"}], []}]
@@ -49,9 +50,9 @@ defmodule IngestTest do
 
     found =
       document
-      |> Discovery.find_element(
-        Discovery.contains_attribute("class")
-        |> Discovery.and_matches(Discovery.element_name_is("a"))
+      |> Traverse.find_element(
+        Traverse.contains_attribute("class")
+        |> Traverse.and_matches(Traverse.element_name_is("a"))
       )
 
     assert found === [{"a", [{"class", ""}, {"href", "hello"}], []}]

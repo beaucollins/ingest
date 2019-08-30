@@ -1,5 +1,6 @@
 defmodule Ingest.Discovery do
   alias Ingest.Feed
+  alias Ingest.Traverse
 
   def find_feeds(urls) do
     Enum.map(urls, fn url ->
@@ -73,37 +74,22 @@ defmodule Ingest.Discovery do
         title = document_title(document)
 
         document
-        |> find_element(
-          element_name_is("link")
-          |> and_matches(attribute_is("rel", "alternate"))
-          |> and_matches(contains_attribute("href"))
+        |> Traverse.find_element(
+          Traverse.element_name_is("link")
+          |> Traverse.and_matches(Traverse.attribute_is("rel", "alternate"))
+          |> Traverse.and_matches(Traverse.contains_attribute("href"))
         )
         |> Enum.map(&node_as_feed(&1, title, url))
     end
   end
 
-  def find_element(node, matcher, acc \\ [])
-
-  def find_element(fragment, matcher, acc) when is_list(fragment) do
-    Enum.reduce(fragment, acc, fn
-      node = {_element, _attributes, children}, matches ->
-        find_element(
-          children,
-          matcher,
-          if matcher.(node) do
-            [node | matches]
-          else
-            matches
-          end
-        )
-
-      _, matches ->
-        matches
-    end)
-  end
-
-  def find_element(node = {_element, _attributes, _children}, matcher, acc) do
-    find_element([node], matcher, acc)
+  def node_as_feed(node, title, url) do
+    %Feed{
+      host: url,
+      title: Traverse.attribute(node, "title", title),
+      url: Traverse.attribute(node, "href"),
+      type: Traverse.attribute(node, "type")
+    }
   end
 
   def location(headers) do
@@ -134,93 +120,17 @@ defmodule Ingest.Discovery do
     end
   end
 
-  def element_name_is(name) do
-    fn
-      {element, _attributes, _children} when element == name ->
-        true
-
-      _ ->
-        false
-    end
-  end
-
-  def and_matches(fn1, fn2) do
-    fn value -> fn1.(value) && fn2.(value) end
-  end
-
-  def attribute_is(attributeName, attributeValue) do
-    fn
-      {_, atts, _} ->
-        Enum.find(atts, fn
-          {name, value} when attributeName == name and attributeValue == value -> true
-          _ -> false
-        end)
-    end
-  end
-
-  def node_as_feed(node, title, url) do
-    %Feed{
-      host: url,
-      title: attribute(node, "title", title),
-      url: attribute(node, "href"),
-      type: attribute(node, "type")
-    }
-  end
-
-  def attribute({_type, attributes, _children}, name, defaultTo \\ nil) do
-    Enum.find(attributes, fn
-      {key, _} when key == name -> true
-      _ -> false
-    end)
-    |> case do
-      {_, value} -> value
-      _ -> defaultTo
-    end
-  end
-
-  def contains_attribute(attributeName) do
-    fn
-      {_, [], _children} ->
-        false
-
-      {_, attributes, _children} when is_list(attributes) ->
-        Enum.find(attributes, fn
-          {name, _value} when name == attributeName ->
-            true
-
-          _ ->
-            false
-        end)
-
-      _ ->
-        false
-    end
-  end
-
   @doc """
     iex> Ingest.Discovery.document_title(:mochiweb_html.parse("<html><title>Page title</title><html>"))
     "Page title"
   """
   def document_title(fragment, defaultTo \\ "") do
     fragment
-    |> find_element(element_name_is("title"))
-    |> node_content(defaultTo)
+    |> Traverse.find_element(Traverse.element_name_is("title"))
+    |> Traverse.node_content(defaultTo)
     |> case do
       [] -> defaultTo
       [head | _rest] -> head
-    end
-  end
-
-  def node_content(fragment, defaultTo \\ "")
-
-  def node_content(fragment, defaultTo) when is_list(fragment) do
-    Enum.map(fragment, &node_content(&1, defaultTo))
-  end
-
-  def node_content({_type, _attributes, children}, defaultTo) do
-    case children do
-      [] -> defaultTo
-      _ -> Enum.reduce(children, &(&1 <> "\n" <> &2))
     end
   end
 end
