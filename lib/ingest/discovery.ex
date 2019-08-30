@@ -38,6 +38,12 @@ defmodule Ingest.Discovery do
 
       {:ok, %HTTPoison.Response{status_code: code}} ->
         {:error, url, code}
+
+      {:error, %HTTPoison.Error{reason: reason}} ->
+        {:error, url, reason}
+
+      _ ->
+        {:error, url, :unknown}
     end
   end
 
