@@ -33,25 +33,69 @@ defmodule Traverse.Document do
       ...> )
       [{"span", [{"class", "important"}], ["Important"]}]
   """
-  @spec find_element(:mochiweb_html.html_node(), Matcher.matcher) :: [:mochiweb_html.html_node()]
+  @spec find_element(:mochiweb_html.html_node(), Matcher.matcher()) :: [
+          :mochiweb_html.html_node()
+        ]
   def find_element(node, matcher) do
     Traverse.Matcher.find(node, matcher)
   end
 
-  def node_content(fragment, defaultTo \\ "")
+  @doc """
+  Given a fragment, returns the text content of the DOM node.
 
-  def node_content(fragment, defaultTo) when is_list(fragment) do
-    Enum.map(fragment, &node_content(&1, defaultTo))
+      iex> :mochiweb_html.parse(\"\"\"
+      ...>   <html>
+      ...>      <body>
+      ...>        The beginning
+      ...>        <div>
+      ...>          Hello
+      ...> \"\"\")
+      ...> |> Traverse.Document.node_content()
+      "The beginning\\nHello"
+
+  When no text content present:
+
+      iex> :mochiweb_html.parse("<html><body><div>")
+      ...> |> Traverse.Document.node_content()
+      ""
+
+  """
+  def node_content(fragment)
+
+  def node_content(fragment) when is_binary(fragment) do
+    fragment |> String.trim()
   end
 
-  def node_content({_type, _attributes, children}, defaultTo) do
-    case children do
-      [] -> defaultTo
-      _ -> Enum.reduce(children, &(&1 <> "\n" <> &2))
-    end
+  def node_content(fragment) when is_list(fragment) do
+    Enum.reduce(
+      fragment,
+      "",
+      &(case &2 do
+          "" -> ""
+          preceding -> preceding <> "\n"
+        end <> node_content(&1))
+    )
   end
 
-  def attribute({_type, attributes, _children}, name, defaultTo \\ nil) do
+  def node_content({_type, _attributes, children} = _node) do
+    node_content(children)
+  end
+
+  @doc """
+  Fetch the value of the attribute named `name` from a DOM node.
+
+      iex> {"input", [{"for", "other-node"}], []}
+      ...> |> Traverse.Document.attribute("for")
+      "other-node"
+
+  When the attribute of `name` is not present the `defaultTo` value
+  is returned.
+
+      iex> {"a", [{"href", "htts://google.com"}], []}
+      ...> |> Traverse.Document.attribute("target", :empty)
+      :empty
+  """
+  def attribute({_type, attributes, _children} = _node, name, defaultTo \\ nil) do
     Enum.find(attributes, fn
       {key, _} when key == name -> true
       _ -> false
@@ -61,5 +105,4 @@ defmodule Traverse.Document do
       _ -> defaultTo
     end
   end
-
 end

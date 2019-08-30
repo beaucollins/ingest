@@ -41,7 +41,7 @@ defmodule Traverse.Matcher do
       ...> |> find(element_name_is("title"))
       [{"title", [], ["Cool beans"]}]
   """
-  @spec element_name_is(String.t) :: matcher
+  @spec element_name_is(String.t()) :: matcher
   def element_name_is(name) do
     fn
       {element, _attributes, _children} when element == name ->
@@ -76,12 +76,12 @@ defmodule Traverse.Matcher do
     fn value -> fn1.(value) && fn2.(value) end
   end
 
-  @spec id_is(String.t) :: matcher
+  @spec id_is(String.t()) :: matcher
   def id_is(elementID) do
     attribute_is("id", elementID)
   end
 
-  @spec attribute_is(String.t, String.t) :: matcher
+  @spec attribute_is(String.t(), String.t()) :: matcher
   def attribute_is(attributeName, attributeValue) do
     fn
       {_, atts, _} ->
@@ -92,7 +92,7 @@ defmodule Traverse.Matcher do
     end
   end
 
-  @spec contains_attribute(String.t) :: matcher
+  @spec contains_attribute(String.t()) :: matcher
   def contains_attribute(attributeName) do
     fn
       {_, [], _children} ->

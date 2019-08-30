@@ -7,7 +7,7 @@ defmodule Ingest.Discovery do
   alias Ingest.Feed
   alias Traverse.Document, as: Traverse
 
-  @spec find_feeds([String.t]) :: [{:ok, String.t, [Feed.T]} | {:error, String.t, Atom.t}]
+  @spec find_feeds([String.t()]) :: [{:ok, String.t(), [Feed.T]} | {:error, String.t(), Atom.t()}]
   def find_feeds(urls) do
     Enum.map(urls, fn url ->
       Task.async(fn ->
@@ -132,13 +132,9 @@ defmodule Ingest.Discovery do
       iex> Ingest.Discovery.document_title(:mochiweb_html.parse("<html><title>Page title</title><html>"))
       "Page title"
   """
-  def document_title(fragment, defaultTo \\ "") do
+  def document_title(fragment) do
     fragment
     |> Traverse.find_element(element_name_is("title"))
-    |> Traverse.node_content(defaultTo)
-    |> case do
-      [] -> defaultTo
-      [head | _rest] -> head
-    end
+    |> Traverse.node_content()
   end
 end

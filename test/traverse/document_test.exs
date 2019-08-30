@@ -7,12 +7,13 @@ defmodule Traverse.DocumentTest do
   doctest Traverse.Document
 
   test "combines matchers" do
-    document = """
-      <body>
-        <a class="" href="hello" /><a href="other" />
-      </body>
-    """
-    |> :mochiweb_html.parse()
+    document =
+      """
+        <body>
+          <a class="" href="hello" /><a href="other" />
+        </body>
+      """
+      |> :mochiweb_html.parse()
 
     found =
       document
@@ -39,5 +40,4 @@ defmodule Traverse.DocumentTest do
 
     assert found === [{"a", [{"class", ""}, {"href", "hello"}], []}]
   end
-
 end
