@@ -31,13 +31,13 @@ defmodule Traverse.Matcher do
   Returns a matcher for a given element type.
 
       iex> import Traverse.Matcher
-      iex> :mochiweb_html.parse(\"\"\"
+      iex> :mochiweb_html.parse(~s(
       ...>   <html>
       ...>     <head>
       ...>       <title>Cool beans</title>
       ...>     </head>
       ...>     <body>
-      ...> \"\"\")
+      ...> ))
       ...> |> find(element_name_is("title"))
       [{"title", [], ["Cool beans"]}]
   """
@@ -56,20 +56,20 @@ defmodule Traverse.Matcher do
   Combines two matchers into a matcher that requires both to pass.
 
       iex> import Traverse.Matcher
-      iex> :mochiweb_html.parse(\"\"\"
+      iex> :mochiweb_html.parse(~s(
       ...>   <html>
       ...>     <head>
       ...>       <title>Cool beans</title>
       ...>     </head>
       ...>     <body id="post-22">Stuff
-      ...> \"\"\")
+      ...> ))
       ...> |> find(
       ...>   and_matches(
       ...>     element_name_is("body"),
       ...>     ("id" |> attribute_is("post-22"))
       ...>   )
       ...> )
-      [{"body", [{"id", "post-22"}], ["Stuff\\n"]}]
+      [{"body", [{"id", "post-22"}], ["Stuff\\n "]}]
   """
   @spec and_matches(matcher, matcher) :: matcher
   def and_matches(fn1, fn2) do

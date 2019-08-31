@@ -8,25 +8,25 @@ defmodule Traverse.Document do
 
   Find all nodes that have`id="two"`
 
-      iex> :mochiweb_html.parse("<html><body><div /><div id=\\"two\\">Hello</div>")
+      iex> :mochiweb_html.parse(~s(<html><body><div /><div id="two">Hello</div>))
       ...> |> Traverse.Document.find_element(Traverse.Matcher.id_is("two"))
       [{"div", [{"id", "two"}], ["Hello"]}]
 
   Find all nodes that are `<span>` elements:
 
-      iex> :mochiweb_html.parse("<html><body><span>1</span><span>2</span><div><span>3</span></html>")
+      iex> :mochiweb_html.parse(~s(<html><body><span>1</span><span>2</span><div><span>3</span></html>))
       ...> |> Traverse.Document.find_element(Traverse.Matcher.element_name_is("span"))
       [{"span", [], ["3"]}, {"span", [], ["2"]}, {"span", [], ["1"]}]
 
   Find all nodes that are `<span>` elements and have a `class="important"` attribute:
 
       iex> import Traverse.Matcher
-      iex> :mochiweb_html.parse(\"\"\"
+      iex> :mochiweb_html.parse(~s(
       ...>   <html>
       ...>     <span>Not important</span>
       ...>     <span class="important">Important</span>
       ...>     <div class="important"/>
-      ...> \"\"\")
+      ...> ))
       ...> |> Traverse.Document.find_element(
       ...>     attribute_is("class", "important")
       ...>     |> and_matches(element_name_is("span"))
@@ -43,13 +43,13 @@ defmodule Traverse.Document do
   @doc """
   Given a fragment, returns the text content of the DOM node.
 
-      iex> :mochiweb_html.parse(\"\"\"
+      iex> :mochiweb_html.parse(~s(
       ...>   <html>
       ...>      <body>
       ...>        The beginning
       ...>        <div>
       ...>          Hello
-      ...> \"\"\")
+      ...> ))
       ...> |> Traverse.Document.node_content()
       "The beginning\\nHello"
 
