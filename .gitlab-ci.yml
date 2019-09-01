@@ -4,10 +4,6 @@ cache:
   paths:
   - deps/
 
-
-variables:
-  MIX_ENV: test
-
 before_script:
   - mix local.hex --force
   - mix local.rebar --force
@@ -21,7 +17,6 @@ test:
 docs:
   stage: deploy
   script:
-  - mix help
   - mix docs
   - mv doc public
   only:
