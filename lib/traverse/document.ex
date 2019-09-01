@@ -1,6 +1,6 @@
 defmodule Traverse.Document do
   @moduledoc """
-  Utilities for traversing a DOM from `:mochiweb_html.parse/1`.
+  Utilities for traversing a DOM from `Traverse.parse/1`.
   """
 
   @doc """
@@ -8,40 +8,42 @@ defmodule Traverse.Document do
 
   Find all nodes that have`id="two"`
 
-      iex> :mochiweb_html.parse(~s(<html><body><div /><div id="two">Hello</div>))
-      ...> |> Traverse.Document.find_element(Traverse.Matcher.id_is("two"))
+      iex> Traverse.parse(~s(<html><body><div /><div id="two">Hello</div>))
+      ...> |> Traverse.Document.query_all(Traverse.Matcher.id_is("two"))
       [{"div", [{"id", "two"}], ["Hello"]}]
 
   Find all nodes that are `<span>` elements:
 
-      iex> :mochiweb_html.parse(~s(<html><body><span>1</span><span>2</span><div><span>3</span></html>))
-      ...> |> Traverse.Document.find_element(Traverse.Matcher.element_name_is("span"))
-      [{"span", [], ["3"]}, {"span", [], ["2"]}, {"span", [], ["1"]}]
+      iex> Traverse.parse(~s(<html><body><span>1</span><span>2</span><div><span>3</span></html>))
+      ...> |> Traverse.Document.query_all(Traverse.Matcher.element_name_is("span"))
+      [{"span", [], ["1"]}, {"span", [], ["2"]}, {"span", [], ["3"]}]
 
   Find all nodes that are `<span>` elements and have a `class="important"` attribute:
 
       iex> import Traverse.Matcher
-      iex> :mochiweb_html.parse(~s(
+      iex> Traverse.parse(~s(
       ...>   <html>
       ...>     <span>Not important</span>
       ...>     <span class="important">Important</span>
       ...>     <div class="important"/>
       ...> ))
-      ...> |> Traverse.Document.find_element(
+      ...> |> Traverse.Document.query_all(
       ...>     attribute_is("class", "important")
       ...>     |> and_matches(element_name_is("span"))
       ...> )
       [{"span", [{"class", "important"}], ["Important"]}]
   """
-  @spec find_element(:mochiweb_html.html_node(), Matcher.matcher()) :: [
-          :mochiweb_html.html_node()
-        ]
-  def find_element(node, matcher) do
-    Traverse.Matcher.find(node, matcher)
+  def query_all(document, matcher) do
+    Traverse.Matcher.query_all(document, matcher)
+  end
+
+  def query(document, matcher) do
+    Traverse.Matcher.query(document, matcher)
   end
 
   @doc """
-  Given a fragment, returns the text content of the DOM node.
+  Given a fragment, returns the text content of the DOM node. Text nodes are
+  trimmed with `String.trim/1`
 
       iex> :mochiweb_html.parse(~s(
       ...>   <html>
@@ -55,30 +57,32 @@ defmodule Traverse.Document do
 
   When no text content present:
 
-      iex> :mochiweb_html.parse("<html><body><div>")
+      iex> Traverse.parse("<html><body><div>")
       ...> |> Traverse.Document.node_content()
       ""
 
   """
-  def node_content(fragment)
+  def node_content(fragment, concat_with \\ "\n")
 
-  def node_content(fragment) when is_binary(fragment) do
+  def node_content(nil, _concat_with), do: nil
+
+  def node_content(fragment, _concat_with) when is_binary(fragment) do
     fragment |> String.trim()
   end
 
-  def node_content(fragment) when is_list(fragment) do
+  def node_content(fragment, concat_with) when is_list(fragment) do
     Enum.reduce(
       fragment,
       "",
       &(case &2 do
           "" -> ""
-          preceding -> preceding <> "\n"
+          preceding -> preceding <> concat_with
         end <> node_content(&1))
     )
   end
 
-  def node_content({_type, _attributes, children} = _node) do
-    node_content(children)
+  def node_content({_type, _attributes, children} = _node, concat_with) do
+    node_content(children, concat_with)
   end
 
   @doc """

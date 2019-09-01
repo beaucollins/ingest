@@ -7,17 +7,15 @@ defmodule Traverse.DocumentTest do
   doctest Traverse.Document
 
   test "combines matchers" do
-    document =
-      """
-        <body>
-          <a class="" href="hello" /><a href="other" />
-        </body>
-      """
-      |> :mochiweb_html.parse()
+    document = Traverse.parse("""
+      <body>
+        <a class="" href="hello" /><a href="other" />
+      </body>
+    """)
 
     found =
       document
-      |> Document.find_element(
+      |> Document.query_all(
         Matcher.contains_attribute("class")
         |> Matcher.and_matches(Matcher.element_name_is("a"))
       )
@@ -33,8 +31,8 @@ defmodule Traverse.DocumentTest do
     """
 
     found =
-      Document.find_element(
-        :mochiweb_html.parse(document),
+      Document.query_all(
+        Traverse.parse(document),
         Matcher.contains_attribute("class")
       )
 

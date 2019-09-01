@@ -5,7 +5,7 @@ defmodule Ingest.Discovery do
   """
   import Traverse.Matcher
   alias Ingest.Feed
-  alias Traverse.Document, as: Traverse
+  alias Traverse.Document
 
   @spec find_feeds([String.t()]) :: [{:ok, String.t(), [Feed.T]} | {:error, String.t(), Atom.t()}]
   def find_feeds(urls) do
@@ -27,8 +27,8 @@ defmodule Ingest.Discovery do
 
       iex> Ingest.Discovery.find_feed("http://awesome.blog")
       { :ok, "http://awesome.blog", [
+        %Feed{host: "http://awesome.blog", type: "application/rss+xml", title: "So Awesome", url: "/feed.rss"},
         %Feed{host: "http://awesome.blog", type: "application/rss+json", title: "So Awesome", url: "/feed.json"},
-        %Feed{host: "http://awesome.blog", type: "application/rss+xml", title: "So Awesome", url: "/feed.rss"}
       ] }
   """
   def find_feed(url) when is_binary(url) do
@@ -76,11 +76,11 @@ defmodule Ingest.Discovery do
         []
 
       _ ->
-        document = :mochiweb_html.parse(body)
+        document = Traverse.parse(body)
         title = document_title(document)
 
         document
-        |> Traverse.find_element(
+        |> Document.query_all(
           element_name_is("link")
           |> and_matches(attribute_is("rel", "alternate"))
           |> and_matches(contains_attribute("href"))
@@ -92,9 +92,9 @@ defmodule Ingest.Discovery do
   def node_as_feed(node, title, url) do
     %Feed{
       host: url,
-      title: Traverse.attribute(node, "title", title),
-      url: Traverse.attribute(node, "href"),
-      type: Traverse.attribute(node, "type")
+      title: Document.attribute(node, "title", title),
+      url: Document.attribute(node, "href"),
+      type: Document.attribute(node, "type")
     }
   end
 
@@ -129,12 +129,12 @@ defmodule Ingest.Discovery do
   @doc """
   Retrieve the DOM Document's title
 
-      iex> Ingest.Discovery.document_title(:mochiweb_html.parse("<html><title>Page title</title><html>"))
+      iex> Ingest.Discovery.document_title(Traverse.parse("<html><title>Page title</title><html>"))
       "Page title"
   """
   def document_title(fragment) do
     fragment
-    |> Traverse.find_element(element_name_is("title"))
-    |> Traverse.node_content()
+    |> Document.query(element_name_is("title"))
+    |> Document.node_content()
   end
 end

@@ -1,4 +1,60 @@
 defmodule Traverse.MatcherTest do
   use ExUnit.Case
-  doctest Traverse.Matcher
+  alias Traverse.Matcher
+  doctest Matcher
+
+  setup do
+    [
+      graph: :mochiweb_html.parse(~s(
+        <html>
+          <head></head>
+          <body>
+            <div>Hello <span>there</span>.</div>
+            <div>:\)</div>
+          </body>
+      ))
+    ]
+  end
+
+  test "graph stream", context do
+    stream = Matcher.stream(context[:graph])
+
+    identifier = fn
+      text when is_binary(text) -> {:text, text}
+      {element, _, _} -> {:element, element}
+    end
+
+    assert Enum.map(stream, identifier) === [
+             element: "html",
+             element: "head",
+             element: "body",
+             element: "div",
+             element: "div",
+             text: "Hello ",
+             element: "span",
+             text: ".",
+             text: ":)",
+             text: "there"
+           ]
+  end
+
+  test "filter stream", context do
+    matches =
+      Matcher.stream(context[:graph], Matcher.element_name_is("div"))
+      |> Enum.to_list()
+
+    assert [
+      {"div", [], ["Hello ", {"span", [], ["there"]}, "."]},
+      {"div", [], [":)"]}
+    ] === matches
+  end
+
+  test "query for the first match", context do
+    assert {"div", [], ["Hello ", {"span", [], ["there"]}, "."]} ===
+             Matcher.query(
+               context[:graph],
+               Matcher.element_name_is("div")
+               |> Matcher.or_matches(Matcher.element_name_is("span"))
+             )
+  end
 end
