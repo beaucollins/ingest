@@ -16,12 +16,12 @@ before_script:
 test:
   stage: test
   script:
-  - mix help
   - mix test
 
 docs:
   stage: deploy
   script:
+  - mix help
   - mix docs
   - mv doc public
   only:
