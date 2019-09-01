@@ -59,9 +59,14 @@ defmodule Traverse.Matcher do
       [{_, _, children} = node | rest] ->
         {node, rest ++ children}
 
-      # A text node, retur the node and continue with the rest
+      # A text node, return the node and continue with the rest
       [text | rest] ->
         {text, rest}
+
+      # Whet streaming a document fragment that is empty as the
+      # initial item, Stream unfold receives nil, Stream is done
+      nil ->
+        nil
     end)
   end
 
@@ -156,10 +161,11 @@ defmodule Traverse.Matcher do
           {^name, ^value} -> true
           _ -> false
         end)
-      _ -> false
+
+      _ ->
+        false
     end
   end
-
 
   @doc """
   Creates a matcher that matches every matcher in the list of `selectors`.
@@ -174,10 +180,10 @@ defmodule Traverse.Matcher do
       [{"body", [{"id", "5"}, {"class", "class"}], []}]
   """
   def matches_all(selectors) do
-    fn node -> Enum.all?(selectors, &(&1.(node))) end
+    fn node -> Enum.all?(selectors, & &1.(node)) end
   end
 
-   @doc """
+  @doc """
   Creates a matcher that matches any matcher in the list of `selectors`.
 
       iex> import Traverse.Matcher
@@ -192,7 +198,7 @@ defmodule Traverse.Matcher do
       ]
   """
   def matches_any(selectors) do
-    fn node -> Enum.any?(selectors, &(&1.(node))) end
+    fn node -> Enum.any?(selectors, & &1.(node)) end
   end
 
   @doc """
@@ -219,6 +225,25 @@ defmodule Traverse.Matcher do
 
       _ ->
         false
+    end
+  end
+
+  @doc """
+  Matches all text nodes.
+
+      iex> import Traverse.Matcher
+      iex> Traverse.parse(\"\"\"
+      ...> <html>
+      ...>   <div>Hello</div>
+      ...>   <div><em>There</em></div>
+      ...> \"\"\")
+      ...> |> query_all(is_text)
+      ["Hello", "There"]
+  """
+  def is_text do
+    fn
+      content when is_binary(content) -> true
+      _ -> false
     end
   end
 end

@@ -7,11 +7,12 @@ defmodule Traverse.DocumentTest do
   doctest Traverse.Document
 
   test "combines matchers" do
-    document = Traverse.parse("""
-      <body>
-        <a class="" href="hello" /><a href="other" />
-      </body>
-    """)
+    document =
+      Traverse.parse("""
+        <body>
+          <a class="" href="hello" /><a href="other" />
+        </body>
+      """)
 
     found =
       document

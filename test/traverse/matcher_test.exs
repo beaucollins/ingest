@@ -11,6 +11,7 @@ defmodule Traverse.MatcherTest do
           <body>
             <div>Hello <span>there</span>.</div>
             <div>:\)</div>
+            <!-- ignored -->
           </body>
       ))
     ]
@@ -21,6 +22,7 @@ defmodule Traverse.MatcherTest do
 
     identifier = fn
       text when is_binary(text) -> {:text, text}
+      {:comment, comment} -> {:comment, comment}
       {element, _, _} -> {:element, element}
     end
 
@@ -30,6 +32,7 @@ defmodule Traverse.MatcherTest do
              element: "body",
              element: "div",
              element: "div",
+             comment: " ignored ",
              text: "Hello ",
              element: "span",
              text: ".",
@@ -44,9 +47,9 @@ defmodule Traverse.MatcherTest do
       |> Enum.to_list()
 
     assert [
-      {"div", [], ["Hello ", {"span", [], ["there"]}, "."]},
-      {"div", [], [":)"]}
-    ] === matches
+             {"div", [], ["Hello ", {"span", [], ["there"]}, "."]},
+             {"div", [], [":)"]}
+           ] === matches
   end
 
   test "query for the first match", context do
