@@ -1,20 +1,30 @@
 image: elixir:latest
 
-services:
-  - postgres:latest
+cache:
+  paths:
+  - deps/
+
 
 variables:
-  POSTGRES_DB: hello_gitlab_ci_test
-  POSTGRES_HOST: postgres
-  POSTGRES_USER: postgres
-  POSTGRES_PASSWORD: "postgres"
-  MIX_ENV: "test"
+  MIX_ENV: test
 
 before_script:
   - mix local.hex --force
   - mix local.rebar --force
   - mix deps.get --only test
 
-mix:
+test:
+  stage: test
   script:
   - mix test
+
+docs:
+  stage: deploy
+  script:
+  - mix docs
+  - mv doc public
+  only:
+  - master
+  artifacts:
+    paths:
+    - public

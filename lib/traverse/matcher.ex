@@ -63,8 +63,8 @@ defmodule Traverse.Matcher do
       [text | rest] ->
         {text, rest}
 
-      # Whet streaming a document fragment that is empty as the
-      # initial item, Stream unfold receives nil, Stream is done
+      # When streaming a document fragment that is empty as the
+      # initial item, Stream.unfold/3 receives nil, Stream is done
       nil ->
         nil
     end)
