@@ -237,10 +237,10 @@ defmodule Traverse.Matcher do
       ...>   <div>Hello</div>
       ...>   <div><em>There</em></div>
       ...> \"\"\")
-      ...> |> query_all(is_text)
+      ...> |> query_all(is_text_element())
       ["Hello", "There"]
   """
-  def is_text do
+  def is_text_element do
     fn
       content when is_binary(content) -> true
       _ -> false

@@ -71,8 +71,8 @@ defmodule Traverse.Document do
   # end
 
   def node_content(fragment, concat_with \\ "\n") do
-    fragment |>
-    query_all(Traverse.Matcher.is_text())
+    fragment
+    |> query_all(Traverse.Matcher.is_text_element())
     |> Stream.map(&String.trim/1)
     |> Enum.reduce(
       "",
