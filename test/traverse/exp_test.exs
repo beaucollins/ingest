@@ -7,7 +7,7 @@ defmodule Traverse.ExpTest do
     # Trying to come up with the equivalent of
     # document.querySelector("div .thing")
     #
-    # So fist do a query all on "div" and then a query all on ".thing"
+    # So first do a query all on "div" and then a query all on ".thing"
     document =
       Traverse.parse("""
         <html>
