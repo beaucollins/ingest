@@ -44,6 +44,7 @@ defmodule Ingest.MixProject do
       {:mochiweb, "~> 2.18.0"},
       {:plug_cowboy, "~> 2.0"},
       {:jason, "~> 1.1"},
+      {:feedraptor, "~> 0.3.0"},
       {:ex_doc, "~>0.21", only: :dev, runtime: false}
     ]
   end
