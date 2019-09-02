@@ -21,8 +21,7 @@ defmodule Traverse.ExpTest do
 
     assert document
            |> stream(element_name_is("div"))
-           |> Stream.map(&stream(&1, "class" |> attribute_is("thing")))
-           |> Stream.concat()
+           |> Stream.flat_map(&stream(&1, "class" |> attribute_is("thing")))
            |> Enum.to_list() ===
              [{"span", [{"id", "correct"}, {"class", "thing"}], []}]
   end
