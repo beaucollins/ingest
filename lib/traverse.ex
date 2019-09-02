@@ -15,7 +15,7 @@ defmodule Traverse do
       ...> |> Traverse.Document.node_content()
       "The Best Page on the Internet 🚀"
 
-  In the `Ingest` application uses `Traverse` to find `<link type="alternate">` elements find RSS feeds
+  The `Ingest` application uses `Traverse` to find `<link type="alternate">` elements find RSS feeds
   for a given document.
 
       iex> import Traverse.Matcher
