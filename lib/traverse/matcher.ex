@@ -54,7 +54,7 @@ defmodule Traverse.Matcher do
         {node, children}
 
       # A list of nodes to process, the first beig a DOM node
-      # Append it's children to the list to be iterated on later
+      # Append its children to the list to be iterated on later
       # NOTE: prepending items is preferred to Kernal.++
       [{_, _, children} = node | rest] ->
         {node, rest ++ children}
