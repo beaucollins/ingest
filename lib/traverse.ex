@@ -31,7 +31,7 @@ defmodule Traverse do
       [{"link", [{"rel", "alternate"}, {"type", "application/json"}, {"href", "http://example.blog/feed/rss"}], []}]
 
     The workhorse of the query API is `Traverse.Matcher.stream/1` which uses `Stream.unfold/2`
-    to interate oven each node within the DOM and execute a compatible matcher function.
+    to iterate oven each node within the DOM and execute a compatible matcher function.
   """
   @doc """
   Parses content into a DOM graph.
