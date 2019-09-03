@@ -1,4 +1,6 @@
 defmodule Traverse.Matcher do
+  alias Traverse.Document
+
   @moduledoc """
   Utilites for querying a DOM.
   """
@@ -29,6 +31,10 @@ defmodule Traverse.Matcher do
   """
   def query_all(document, matcher) do
     stream(document, matcher) |> Enum.to_list()
+  end
+
+  def stream_children(node, matcher) do
+    node |> Document.children() |> stream(matcher)
   end
 
   @doc """

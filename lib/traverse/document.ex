@@ -42,6 +42,27 @@ defmodule Traverse.Document do
   end
 
   @doc """
+  Children of a given node. If `node` is not a element Tuple, returns
+  an empty list.
+
+      iex> Traverse.Document.children("text node")
+      []
+
+      iex> Traverse.parse(~s(<html><head /><body>Hello))
+      ...> |> Traverse.Document.children()
+      [{"head", [], []}, {"body", [], ["Hello"]}]
+  """
+  def children(node) do
+    case node do
+      {_name, _attributes, children} ->
+        children
+
+      _ ->
+        []
+    end
+  end
+
+  @doc """
   Given a fragment, returns the text content of the DOM node. Text nodes are
   trimmed with `String.trim/1`
 
