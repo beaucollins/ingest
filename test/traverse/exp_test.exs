@@ -1,7 +1,6 @@
 defmodule Traverse.ExpTest do
   use ExUnit.Case
 
-  alias Traverse.Document
   import Traverse.Matcher
 
   test "descendants" do
@@ -59,46 +58,23 @@ defmodule Traverse.ExpTest do
   end
 
   test "mf" do
-    Ingest.DateTime.parse("2019-09-02 13:23:43-07:00")
+    Ingest.DateTime.parse("2019-09-02 13:23:43 UTC")
     |> case do
-      {result, _} -> assert result === :ok
+      {:ok, date} ->
+        assert date === ~U[2019-09-02 13:23:43Z]
     end
 
     assert "2019-08-13 21:38Z"
            |> Ingest.DateTime.parse() ===
              {:ok, ~U[2019-08-13 21:38:00Z]}
   end
-end
 
-defmodule Ingest.DateTime do
-  @formats [
-    {17, "{YYYY}-{0M}-{0D} {h24}:{0m}Z"},
-    {20, "{YYYY}-{0M}-{0D} {h24}:{0m}{0s}Z"},
-    {25, "{YYYY}-{0M}-{0D} {h24}:{0m}:{0s}{Z:}"}
-  ]
+  test "mf2" do
+    assert "2019-08-13 21:38Z"
+           |> Ingest.View.DateTime.display() ===
+             { :ok, "2019-08-13T21:38:00Z" }
 
-  def parse(date) do
-    @formats
-    |> Enum.reduce(nil, fn
-      _, {:ok, _} = result ->
-        result
-
-      {len, format}, _ ->
-        String.slice(date, 0, len)
-        |> Timex.parse(format)
-        |> case do
-          {:ok, d = %NaiveDateTime{}} = result ->
-            case DateTime.from_naive(d, "Etc/UTC") do
-              {:ok, _} = success ->
-                success
-
-              _ ->
-                result
-            end
-
-          result ->
-            result
-        end
-    end)
+    assert "2019-09-02 13:23:43-07:00" |> Ingest.View.DateTime.display() ===
+             { :ok, "2019-09-02T13:23:43-07:00" }
   end
 end
