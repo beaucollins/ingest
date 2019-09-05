@@ -16,7 +16,10 @@ defmodule Ingest.MixProject do
       source_url: "https://gitlab.com/beaucollins/ingest",
       docs: [
         main: "Ingest",
-        extras: ["README.md"]
+        extras: [
+          "README.md",
+          "docs/hello.md"
+        ]
       ]
     ]
   end

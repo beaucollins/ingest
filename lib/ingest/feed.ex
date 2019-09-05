@@ -40,4 +40,24 @@ defmodule Ingest.Feed do
         uri
     end
   end
+
+  def parse(content) do
+    case is_json(content) do
+      false -> Feedraptor.parse(content)
+      true -> Ingest.JSONFeed.parse(content)
+    end
+  end
+
+  defp is_json(content) do
+    content
+    |> String.slice(0, 10)
+    |> String.trim()
+    |> String.starts_with?("{")
+  end
+end
+
+defmodule Ingest.JSONFeed do
+  def parse(content) do
+    Jason.decode!(content)
+  end
 end
