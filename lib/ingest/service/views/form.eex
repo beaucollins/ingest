@@ -1,0 +1,9 @@
+<form method="get" action="/discover">
+<p>
+	<label>Website</label>
+	<input id="url" name="url" value="" />
+</p>
+<div>
+	<button type="sumbit">Search</button>
+</div>
+</form>

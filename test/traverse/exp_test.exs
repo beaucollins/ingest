@@ -66,7 +66,7 @@ defmodule Traverse.ExpTest do
 
     assert "2019-08-13 21:38Z"
            |> Ingest.DateTime.parse() ===
-             { :ok, ~U[2019-08-13 21:3800Z]}
+             { :ok, ~U[2019-08-13 21:38:00Z]}
   end
 end
 
