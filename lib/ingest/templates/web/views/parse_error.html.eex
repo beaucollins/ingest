@@ -1,0 +1,5 @@
+Could not parse feed: <%= Exception.message(@exception) %>
+<hr />
+<pre>
+<%= @body %>
+</pre>

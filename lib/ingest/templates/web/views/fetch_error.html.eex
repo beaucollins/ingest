@@ -1,0 +1,5 @@
+Could not fetch feed <a href="<%= @url %>"><%= @url %></a>
+
+<hr />
+
+Reason <%= @error.reason %>

@@ -12,6 +12,13 @@ config :logger, :console,
   format: "$time $metadata[$level] $message\n",
   metadata: [:request_id]
 
+config :phoenix, :json_library, Jason
+config :phoenix, :plug_init_mode, :runtime
+
+config :ingest, Ingest.Endpoint,
+  url: [host: "localhost"],
+  http: [port: 4001]
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{Mix.env()}.exs"

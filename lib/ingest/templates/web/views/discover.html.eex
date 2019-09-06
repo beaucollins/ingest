@@ -1,4 +1,4 @@
-<%= for {status, host, feeds} <- feeds do %>
+<%= for {status, host, feeds} <- @feeds do %>
 <div>
 	<%= host %>
 	<%= case status do %>
@@ -7,7 +7,9 @@
 		<%= for feed <- feeds do %>
 			<li>
 				<%= if feed.title == nil, do: "<em>Untitled</em>", else: feed.title %>
-				<a href="/info/<%= feed |> Ingest.Feed.url |> URI.to_string |> URI.encode(&URI.char_unreserved?/1) %>"><%= Ingest.Feed.url feed %></a>
+				<a href="/info/<%= feed |> Ingest.Feed.url |> URI.to_string |> URI.encode(&URI.char_unreserved?/1) %>">
+					<%= feed |> Ingest.Feed.url |> URI.to_string %>
+				</a>
 				(<%= feed.type %>)
 			</li>
 		<% end %>

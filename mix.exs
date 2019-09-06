@@ -7,7 +7,7 @@ defmodule Ingest.MixProject do
       version: "0.1.0",
       elixir: "~> 1.5",
       elixirc_paths: elixirc_paths(Mix.env()),
-      compilers: Mix.compilers(),
+      compilers: [:phoenix] ++ Mix.compilers(),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
@@ -48,6 +48,8 @@ defmodule Ingest.MixProject do
       {:plug_cowboy, "~> 2.0"},
       {:jason, "~> 1.1"},
       {:feedraptor, "~> 0.3.0"},
+      {:phoenix, "~> 1.4.10"},
+      {:phoenix_html, "~> 2.13.3"},
       {:ex_doc, "~>0.21", only: :dev, runtime: false}
     ]
   end
