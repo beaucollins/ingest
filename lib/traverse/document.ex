@@ -131,4 +131,50 @@ defmodule Traverse.Document do
       _ -> defaultTo
     end
   end
+
+  def to_string(document) do
+    as_string(document)
+  end
+
+  defp as_string({element, atts, children}) do
+    "<" <> element <> attribute_list_string(atts) <> ">" <> as_string(children) <> "</" <> element <> ">"
+  end
+
+  defp as_string(fragment) when is_list(fragment) do
+    Enum.reduce(fragment, "", fn
+      node, string ->
+        string <> as_string(node)
+    end)
+  end
+
+  defp as_string(fragment) when is_binary(fragment) do
+    fragment
+  end
+
+  defp as_string({ :comment, content }) do
+    "<!--" <> content <> "-->"
+  end
+
+  defp attribute_list_string(atts) do
+    case Traverse.Document.AttributeList.to_string(atts) do
+      "" -> ""
+      str -> " " <> str
+    end
+  end
+
+  defmodule AttributeList do
+
+    def to_string(attribute_list) do
+      Enum.reduce(attribute_list, "", fn
+        attr, "" ->
+          as_string(attr)
+        attr, list ->
+          list <> " " <> as_string(attr)
+      end)
+    end
+
+    defp as_string({ key, value }) do
+      key <> "=\"" <> value <> "\""
+    end
+  end
 end

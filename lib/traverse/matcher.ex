@@ -102,6 +102,10 @@ defmodule Traverse.Matcher do
     end
   end
 
+  def element_is_one_of(element_names) do
+    matches_any(element_names |> Enum.map(&element_name_is/1))
+  end
+
   @doc """
   Combines two matchers into a matcher that requires both to pass.
 

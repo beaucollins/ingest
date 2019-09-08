@@ -66,7 +66,6 @@ defmodule Ingest.Web.Views do
     entry_list(%{entries: Map.get(feed, "items")})
   end
 
-  # Not sure what to do here
   defp entry_list(_feed) do
     content_tag :em, "No entries found"
   end
@@ -94,7 +93,11 @@ defmodule Ingest.Web.Views do
   defp entry_summary(item) do
     case item do
       %{summary: summary} ->
-        content_tag :p, summary
+        content_tag(:div) do
+          summary
+          |>Ingest.Sanitize.sanitize_html
+          |>raw
+        end
 
       _ ->
         ""

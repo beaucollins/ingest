@@ -45,4 +45,7 @@ defmodule Traverse do
   DOM to collect.
   """
   def query(document, matcher), do: Traverse.Matcher.query(document, matcher)
+
+  def map(document, transformer), do: Traverse.Transformer.map(document, transformer)
+
 end
