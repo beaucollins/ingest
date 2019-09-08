@@ -72,9 +72,9 @@ defmodule Traverse.ExpTest do
   test "mf2" do
     assert "2019-08-13 21:38Z"
            |> Ingest.View.DateTime.display() ===
-             { :ok, "2019-08-13T21:38:00Z" }
+             {:ok, "2019-08-13T21:38:00Z"}
 
     assert "2019-09-02 13:23:43-07:00" |> Ingest.View.DateTime.display() ===
-             { :ok, "2019-09-02T13:23:43-07:00" }
+             {:ok, "2019-09-02T13:23:43-07:00"}
   end
 end

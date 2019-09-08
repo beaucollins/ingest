@@ -12,7 +12,7 @@ defmodule Ingest.Service do
 
   match(_, do: conn |> render(404, "404.html"))
 
-  defp url_param(%Plug.Conn{} = conn)  do
+  defp url_param(%Plug.Conn{} = conn) do
     conn
     |> fetch_query_params
     |> Map.get(:params)

@@ -43,9 +43,36 @@ defmodule Traverse do
   @doc """
   Query a document or document fragment using a Matcher to identify parts of the
   DOM to collect.
+
+  See `Traverse.Matcher.query/2`.
   """
   def query(document, matcher), do: Traverse.Matcher.query(document, matcher)
 
-  def map(document, transformer), do: Traverse.Transformer.map(document, transformer)
+  @doc """
+  Transform the content of an HTML document.
 
+  See `Traverse.Transformer.map/2`.
+
+  A transformer is as function that takes in an HTML fragment (node, node list, text, or comment)
+  and returns a fragment to be used in the new returned document.
+
+  Remove all `<script>` tags from a document:
+
+      iex> import Traverse.Transformer
+      iex> \"\"\"
+      ...> <html>
+      ...>  Hello
+      ...>  <script type="text/javascript">alert("🧨");</script>
+      ...>  There
+      ...> \"\"\"
+      ...> |> Traverse.parse()
+      ...> |> Traverse.map(transform(
+      ...>   Traverse.Matcher.element_name_is("script"),
+      ...>   fn _node -> [] end
+      ...> ))
+      ...> |> Traverse.Document.to_string()
+      ~s[<html>\\n Hello\\n \\n There\\n</html>]
+
+  """
+  def map(document, transformer), do: Traverse.Transformer.map(document, transformer)
 end

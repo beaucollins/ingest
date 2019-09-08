@@ -1,14 +1,15 @@
 defmodule Ingest.Sanitize do
   import Traverse.Matcher, only: [element_is_one_of: 1, element_name_is: 1]
-  import Traverse.Transformer, only: [
-    transform: 2,
-    transform: 3,
-    transform_first: 1,
-    remove_content: 0,
-    select_children: 0,
-    unchanged: 0
-  ]
 
+  import Traverse.Transformer,
+    only: [
+      transform: 2,
+      transform: 3,
+      transform_first: 1,
+      remove_content: 0,
+      select_children: 0,
+      unchanged: 0
+    ]
 
   @doc """
   Sanitizes HTML for feed summaries and content.
@@ -32,17 +33,54 @@ defmodule Ingest.Sanitize do
         ),
         transform(
           element_is_one_of([
-            "a", "b", "bdi", "bdo", "blockquote", "br", "cite", "code",
-            "data", "dd", "dfn", "dl", "dt", "em", "figcaption", "figure",
-            "h1", "h2", "h3", "h4", "h5", "h6", "hr", "i", "img", "li",
-            "mark", "ol", "p", "pre", "q", "s", "small", "strong", "sub",
-            "sup", "time", "u", "ul", "var", "wbr",
+            "a",
+            "b",
+            "bdi",
+            "bdo",
+            "blockquote",
+            "br",
+            "cite",
+            "code",
+            "data",
+            "dd",
+            "dfn",
+            "dl",
+            "dt",
+            "em",
+            "figcaption",
+            "figure",
+            "h1",
+            "h2",
+            "h3",
+            "h4",
+            "h5",
+            "h6",
+            "hr",
+            "i",
+            "img",
+            "li",
+            "mark",
+            "ol",
+            "p",
+            "pre",
+            "q",
+            "s",
+            "small",
+            "strong",
+            "sub",
+            "sup",
+            "time",
+            "u",
+            "ul",
+            "var",
+            "wbr"
           ]),
           unchanged(),
           inspect_transform(select_children())
-        ),
+        )
       ])
     )
+    |> Traverse.Document.to_string()
   end
 
   defp inspect_transform(transformer) do
@@ -51,11 +89,11 @@ defmodule Ingest.Sanitize do
       |> case do
         ^fragment ->
           fragment
+
         changed ->
           IO.inspect(fragment, label: "Transformed: ")
           IO.inspect(changed, label: "Became: ")
       end
     end
   end
-
 end

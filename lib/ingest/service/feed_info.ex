@@ -12,13 +12,13 @@ defmodule Ingest.Service.FeedInfo do
     |> case do
       {:ok, %HTTPoison.Response{body: body}} ->
         try do
-          case Ingest.Feed.parse( body )do
+          case Ingest.Feed.parse(body) do
             %{} = feed ->
               render(conn, "feed.html", %{feed: feed})
           end
         rescue
           e in RuntimeError ->
-              render(conn, "parse_error.html", %{exception: e, body: body})
+            render(conn, "parse_error.html", %{exception: e, body: body})
         end
 
       {:error, reason} ->
@@ -90,4 +90,3 @@ defmodule Ingest.DateTime do
     end)
   end
 end
-

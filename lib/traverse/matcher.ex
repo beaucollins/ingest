@@ -168,9 +168,25 @@ defmodule Traverse.Matcher do
   def attribute_is(name, value) do
     fn
       {_, atts, _} ->
-        Enum.find(atts, fn
+        Enum.find(atts, false, fn
           {^name, ^value} -> true
           _ -> false
+        end)
+
+      _ ->
+        false
+    end
+  end
+
+  def attribute_begins_with(name, prefix) do
+    fn
+      {_, atts, _} ->
+        Enum.find(atts, false, fn
+          {^name, value} ->
+            String.starts_with?(value, prefix)
+
+          _ ->
+            false
         end)
 
       _ ->

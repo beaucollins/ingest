@@ -7,15 +7,18 @@ defmodule Ingest.Web.Views do
 
   defmacro __using__(_opts) do
     quote do
-
       def render(conn, status \\ 200, template, assigns \\ %{})
 
-      def render(conn, status, template, assigns) when is_integer(status) and is_binary(template) do
+      def render(conn, status, template, assigns)
+          when is_integer(status) and is_binary(template) do
         conn
         |> Plug.Conn.put_resp_content_type("text/html")
-        |> Plug.Conn.send_resp(status, case Ingest.Web.Views.render(template, assigns) do
-          {:safe, content} -> content
-        end)
+        |> Plug.Conn.send_resp(
+          status,
+          case Ingest.Web.Views.render(template, assigns) do
+            {:safe, content} -> content
+          end
+        )
       end
 
       def render(conn, template, assigns, _unused) when is_binary(template) do
@@ -27,7 +30,7 @@ defmodule Ingest.Web.Views do
   defp feed_title(%{} = feed), do: Map.get(feed, "title", Map.get(feed, :title))
 
   defp feed_title(_feed) do
-    content_tag :em, "Untitled"
+    content_tag(:em, "Untitled")
   end
 
   defp feed_url(%{} = feed), do: Map.get(feed, "url", Map.get(feed, :url))
@@ -42,7 +45,7 @@ defmodule Ingest.Web.Views do
         end
 
       _ ->
-        content_tag :em, "No link"
+        content_tag(:em, "No link")
     end
   end
 
@@ -51,15 +54,15 @@ defmodule Ingest.Web.Views do
   end
 
   defp feed_description(_description) do
-    content_tag :em, "No description"
+    content_tag(:em, "No description")
   end
 
   defp entry_list(%{entries: entries = []}) when is_list(entries) do
-    content_tag :em, "No entries"
+    content_tag(:em, "No entries")
   end
 
   defp entry_list(%{entries: entries}) when is_list(entries) do
-    content_tag :ul, (for entry <- entries, do: entry_item(entry))
+    content_tag(:ul, for(entry <- entries, do: entry_item(entry)))
   end
 
   defp entry_list(%{} = feed) when is_map(feed) do
@@ -67,7 +70,7 @@ defmodule Ingest.Web.Views do
   end
 
   defp entry_list(_feed) do
-    content_tag :em, "No entries found"
+    content_tag(:em, "No entries found")
   end
 
   defp entry_item(item) do
@@ -95,8 +98,8 @@ defmodule Ingest.Web.Views do
       %{summary: summary} ->
         content_tag(:div) do
           summary
-          |>Ingest.Sanitize.sanitize_html
-          |>raw
+          |> Ingest.Sanitize.sanitize_html()
+          |> raw
         end
 
       _ ->
@@ -117,19 +120,19 @@ defmodule Ingest.Web.Views do
   end
 
   defp entry_item_title(_item) do
-    content_tag :em, "Untitled"
+    content_tag(:em, "Untitled")
   end
 
   defp entry_item_published_date(%{published: published}) do
-    published |> Ingest.View.DateTime.display |> entry_item_published_date
+    published |> Ingest.View.DateTime.display() |> entry_item_published_date
   end
 
-  defp entry_item_published_date({ :ok, formatted }) do
-    content_tag :small, formatted
+  defp entry_item_published_date({:ok, formatted}) do
+    content_tag(:small, formatted)
   end
 
-  defp entry_item_published_date({ :error, original }) do
-    content_tag :em, original
+  defp entry_item_published_date({:error, original}) do
+    content_tag(:em, original)
   end
 
   defp entry_item_published_date(_item), do: content_tag(:em, "Unknown publish date")

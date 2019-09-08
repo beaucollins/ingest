@@ -16,6 +16,6 @@ defmodule Ingest.Service.Discover do
         end
       )
 
-    render(conn, "discover.html", %{ feeds: feeds })
+    render(conn, "discover.html", %{feeds: feeds})
   end
 end

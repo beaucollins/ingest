@@ -41,7 +41,6 @@ defmodule Traverse.DocumentTest do
   end
 
   describe "to_string" do
-
     test "comment fragment" do
       assert Document.to_string({:comment, "Not content"}) === "<!--Not content-->"
     end

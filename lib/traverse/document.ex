@@ -136,8 +136,14 @@ defmodule Traverse.Document do
     as_string(document)
   end
 
+  defp as_string({element, atts, []}) do
+    "<" <> element <> attribute_list_string(atts) <> " />"
+  end
+
   defp as_string({element, atts, children}) do
-    "<" <> element <> attribute_list_string(atts) <> ">" <> as_string(children) <> "</" <> element <> ">"
+    "<" <>
+      element <>
+      attribute_list_string(atts) <> ">" <> as_string(children) <> "</" <> element <> ">"
   end
 
   defp as_string(fragment) when is_list(fragment) do
@@ -151,7 +157,7 @@ defmodule Traverse.Document do
     fragment
   end
 
-  defp as_string({ :comment, content }) do
+  defp as_string({:comment, content}) do
     "<!--" <> content <> "-->"
   end
 
@@ -163,17 +169,17 @@ defmodule Traverse.Document do
   end
 
   defmodule AttributeList do
-
     def to_string(attribute_list) do
       Enum.reduce(attribute_list, "", fn
         attr, "" ->
           as_string(attr)
+
         attr, list ->
           list <> " " <> as_string(attr)
       end)
     end
 
-    defp as_string({ key, value }) do
+    defp as_string({key, value}) do
       key <> "=\"" <> value <> "\""
     end
   end
