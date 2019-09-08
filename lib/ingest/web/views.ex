@@ -87,9 +87,24 @@ defmodule Ingest.Web.Views do
               content_tag(:small) do
                 Map.keys(item) |> Enum.join(", ")
               end
-            end
+            end,
+            entry_content(item)
           ]
         end
+    end
+  end
+
+  defp entry_content(item) do
+    case item do
+      %{content: content} ->
+        content_tag(:div) do
+          content
+          |> Ingest.Sanitize.sanitize_html()
+          |> raw
+        end
+
+      _ ->
+        ""
     end
   end
 
