@@ -64,7 +64,7 @@ defmodule Ingest.Web.Views do
   end
 
   defp entry_list(%{entries: entries}) when is_list(entries) do
-    content_tag(:ul, for(entry <- entries, do: entry_item(entry)))
+    content_tag(:ol, for(entry <- entries, do: entry_item(entry)))
   end
 
   defp entry_list(%{} = feed) when is_map(feed) do
@@ -153,4 +153,11 @@ defmodule Ingest.Web.Views do
   end
 
   defp entry_item_published_date(_item), do: content_tag(:em, "Unknown publish date")
+
+  defp error_reason(error) do
+    case error do
+      message when is_binary(message) -> message
+      exception -> Exception.message(exception)
+    end
+  end
 end

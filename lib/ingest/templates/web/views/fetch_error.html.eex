@@ -1,5 +1,7 @@
-Could not fetch feed <a href="<%= @url %>"><%= @url %></a>
+<section class="feed-meta">
+	Could not fetch feed <a href="<%= @url %>"><%= @url %></a>
+</section>
 
-<hr />
-
-Reason <%= @error.reason %>
+<section class="feed-entries fetch-error">
+	<strong>Reason:</strong> <%= error_reason(@error) %>
+</section>
