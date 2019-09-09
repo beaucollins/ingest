@@ -31,7 +31,7 @@ defmodule Traverse.Transformer do
     end
   end
 
-  def transform_all_elements(transformer) do
+  def transform_all_elements(do: transformer) do
     transform(
       fn
         {_element, _atts, _children} ->
