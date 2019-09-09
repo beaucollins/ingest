@@ -11,11 +11,13 @@ defmodule Ingest.Web.Views do
 
       def render(conn, status, template, assigns)
           when is_integer(status) and is_binary(template) do
+        body = Ingest.Web.Views.render(template, assigns)
+
         conn
         |> Plug.Conn.put_resp_content_type("text/html")
         |> Plug.Conn.send_resp(
           status,
-          case Ingest.Web.Views.render(template, assigns) do
+          case Ingest.Web.Layout.render("layout.html", body: body) do
             {:safe, content} -> content
           end
         )

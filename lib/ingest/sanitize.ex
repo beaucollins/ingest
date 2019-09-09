@@ -32,49 +32,27 @@ defmodule Ingest.Sanitize do
           select_children()
         ),
         transform(
-          element_is_one_of([
-            "a",
-            "b",
-            "bdi",
-            "bdo",
-            "blockquote",
-            "br",
-            "cite",
-            "code",
-            "data",
-            "dd",
-            "dfn",
-            "dl",
-            "dt",
-            "em",
-            "figcaption",
-            "figure",
-            "h1",
-            "h2",
-            "h3",
-            "h4",
-            "h5",
-            "h6",
-            "hr",
-            "i",
-            "img",
-            "li",
-            "mark",
-            "ol",
-            "p",
-            "pre",
-            "q",
-            "s",
-            "small",
-            "strong",
-            "sub",
-            "sup",
-            "time",
-            "u",
-            "ul",
-            "var",
-            "wbr"
-          ]),
+          element_is_one_of(~w(
+            a
+            b bdi bdo blockquote br
+            cite code
+            data dd dfn dl dt
+            em
+            figcaption figure
+            h1 h2 h3 h4 h5 h6 hr
+            i
+            img
+            li
+            mark
+            ol
+            p pre
+            q
+            s small strong subsup
+            table tbody td tfoot thead time tr
+            u ul
+            var
+            wbr
+          )),
           unchanged(),
           inspect_transform(select_children())
         )

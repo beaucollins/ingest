@@ -3,7 +3,6 @@ defmodule Ingest.Service.Discover do
   use Plug.Builder
   use Ingest.Web.Views
 
-  plug(Plug.Logger, log: :debug)
   plug(Plug.Parsers, parsers: [:urlencoded])
   plug(:dispatch)
 
