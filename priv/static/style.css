@@ -3,6 +3,9 @@ body {
 	--color-text-light: hsl(198, 100%, 96%);
 	--color-link-light: hsl(198, 100%, 80%);
 	--color-emphasis-light: hsl(198, 100%, 75%);
+
+	--entry-vertical-content-spacing: 20px;
+
 	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
 }
 
@@ -57,11 +60,15 @@ section.feed-entries > ol {
 	list-style:  none;
 	margin: 0;
 	padding: 0;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
 }
 
 section.feed-entries > ol > li {
 	padding: 40px;
 	border-bottom: 0.5px solid var(--color-bg-dark);
+	max-width: 720px;
 }
 
 section.feed-entries > ol > li:last-child {
@@ -74,6 +81,7 @@ section.feed-entries > ol > li:last-child {
 
 section.feed-entries figure {
 	padding: 0;
+	margin: var(--entry-vertical-content-spacing) 0;
 }
 
 section.feed-entries img {
