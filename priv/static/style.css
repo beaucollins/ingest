@@ -1,0 +1,73 @@
+body {
+	--color-bg-dark: rgb(95, 111, 124);
+	--color-text-light: hsl(198, 100%, 96%);
+	--color-link-light: hsl(198, 100%, 80%);
+	--color-emphasis-light: hsl(198, 100%, 75%);
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+}
+
+
+body {
+	background: linear-gradient(0deg, var(--color-bg-dark), var(--color-bg-dark) 50%, #FFF 50%, #FFF);
+	margin: 0;
+	display: -webkit-flex;
+	display: flex;
+	flex-direction: column;
+}
+
+section.feed-meta {
+	background: var(--color-bg-dark);
+	color: var(--color-text-light);
+	padding: 20px;
+	position: -webkit-sticky;
+	position: sticky;
+	top: 0;
+}
+
+section.feed-meta a {
+	color: var(--color-link-light);
+}
+
+section.feed-meta table {
+	width: 100%;
+	color: inherit;
+}
+
+section.feed-meta th {
+	text-align: left;
+	padding: 4px 8px;
+	font-weight: normal;
+	color: var(--color-emphasis-light);
+}
+
+section.feed-meta th:first-child {
+	padding-left: 0
+}
+
+section.feed-meta td {
+	width: 100%;
+}
+
+section.feed-entries {
+	background: #FFF;
+	flex: 1;
+}
+
+section.feed-entries > ol {
+	list-style:  none;
+	margin: 0;
+	padding: 0;
+}
+
+section.feed-entries > ol > li {
+	padding: 40px;
+	border-bottom: 0.5px solid var(--color-bg-dark);
+}
+
+section.feed-entries > ol > li:last-child {
+	border-bottom: none;
+}
+
+.fetch-error {
+	padding: 40px;
+}
