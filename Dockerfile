@@ -8,12 +8,15 @@ WORKDIR /var/app/src
 
 RUN mix deps.get; mix deps.compile;
 
-COPY lib /var/app/src/lib
-COPY config /var/app/src/config
-COPY test /var/apps/src/test
-COPY priv /var/apps/src/priv
+COPY lib lib
+COPY config config
+COPY priv priv
+COPY test test
 
-RUN mix release --path /var/app/app
-RUN rm -fr /var/app/src
+RUN mkdir -p /usr/local/bin
 
-CMD /var/app/app/bin/ingest start
+RUN mix release --path /var/release
+
+RUN rm -fr /var/app/src/
+
+CMD /var/release/bin/ingest start
