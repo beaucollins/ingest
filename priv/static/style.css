@@ -71,3 +71,12 @@ section.feed-entries > ol > li:last-child {
 .fetch-error {
 	padding: 40px;
 }
+
+section.feed-entries figure {
+	padding: 0;
+}
+
+section.feed-entries img {
+	max-width: 100%;
+	height: auto;
+}
