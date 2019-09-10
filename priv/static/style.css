@@ -98,12 +98,13 @@ section.site-results {
 	display: flex;
 	flex-direction: column;
 	background: var(--color-bg-light);
+	flex: 1;
 }
 
 section.site-results:after {
 	content: "";
 	display: block;
-	flex: 1 1 100%;
+	flex: 1 1;
 }
 
 section.site-feeds {
