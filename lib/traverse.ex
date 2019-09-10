@@ -46,6 +46,12 @@ defmodule Traverse do
 
   See `Traverse.Matcher.query/2`.
   """
+  def query(document, matcher) when is_binary(document) do
+    document
+    |> Traverse.parse()
+    |> query(matcher)
+  end
+
   def query(document, matcher), do: Traverse.Matcher.query(document, matcher)
 
   @doc """
@@ -75,4 +81,17 @@ defmodule Traverse do
 
   """
   def map(document, transformer), do: Traverse.Transformer.map(document, transformer)
+
+  @doc """
+  Convert a document fragment into a string.
+
+  Note: there's a bug in the :mochiweb_html.parse/1 function that eats the
+  space between two HTML nodes (e.g. `<strong>` and `<em>`):
+
+      iex> ~s[<html><body><div><strong>Hello</strong> <em>World</em></div>]
+      ...> |> Traverse.query(Traverse.Matcher.element_name_is("div"))
+      ...> |> Traverse.to_string()
+      "<div><strong>Hello</strong><em>World</em></div>"
+  """
+  def to_string(fragment), do: Traverse.Document.to_string(fragment)
 end

@@ -1,0 +1,25 @@
+{
+    "version": "https://jsonfeed.org/version/1",
+    "user_comment": "This feed allows you to read the posts from this site in any feed reader that supports the JSON Feed format. To add this feed to your reader, copy the following URL -- https://beau.collins.pub/feed/json/ -- and add it your reader.",
+    "home_page_url": "http://jsonfeed.blog/",
+    "feed_url": "http://jsonfeed.blog/",
+    "title": "JSONFeed Blog",
+    "description": "Description",
+    "icon": "http://jsonfeed.blog/icon.png",
+    "items": [
+        {
+            "id": "http://jsonfeed.blog/post1",
+            "url": "http://jsonfeed.blog/nice-url",
+            "title": "Title of post",
+            "content_html": "\n<div>Hello 🎉</div>\n",
+            "content_text": "Hello 🎉",
+            "date_published": "2019-07-06T18:57:58+00:00",
+            "date_modified": "2019-07-06T18:57:58+00:00",
+            "author": {
+                "name": "Author",
+                "url": "http://jsonfeed.blog/author",
+                "avatar": "http://jsonfeed.blog/author.png"
+            }
+        }
+    ]
+}

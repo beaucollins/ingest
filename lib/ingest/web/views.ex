@@ -64,11 +64,19 @@ defmodule Ingest.Web.Views do
   end
 
   defp entry_list(%{entries: entries}) when is_list(entries) do
-    content_tag(:ol, for(entry <- entries, do: entry_item(entry)))
+    entry_list(entries)
   end
 
   defp entry_list(%{} = feed) when is_map(feed) do
-    entry_list(%{entries: Map.get(feed, "items")})
+    entry_list(Map.get(feed, "items", []))
+  end
+
+  defp entry_list([]) do
+    entry_list(nil)
+  end
+
+  defp entry_list(entries) when is_list(entries) do
+    content_tag(:ol, for(entry <- entries, do: entry_item(entry)))
   end
 
   defp entry_list(_feed) do

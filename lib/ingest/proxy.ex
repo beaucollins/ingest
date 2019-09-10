@@ -58,6 +58,10 @@ defmodule Ingest.Proxy do
     "<invalid>"
   end
 
+  defp content({"jsonfeed.blog", _}) do
+    File.read!("test/fixtures/jsonfeed.blog-jsonfeed.json")
+  end
+
   defp content(_) do
     {404, "<html><title>Not Found</title></html>"}
   end

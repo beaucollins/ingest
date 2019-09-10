@@ -57,4 +57,14 @@ defmodule Ingest.Service.FeedInfoTest do
            |> Traverse.Document.node_content() ===
              "<invalid>"
   end
+
+  test "GET JSON feed", %{opts: opts} do
+    conn = conn(:get, "/jsonfeed.blog")
+    conn = Ingest.Service.FeedInfo.call(conn, opts)
+
+    assert conn.state == :sent
+    assert conn.status == 200
+
+    assert conn.resp_body |> text(class_name_is("feed-title")) === "JSONFeed Blog"
+  end
 end
