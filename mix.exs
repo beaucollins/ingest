@@ -4,7 +4,7 @@ defmodule Ingest.MixProject do
   def project do
     [
       app: :ingest,
-      version: "0.1.0",
+      version: "0.2.0",
       elixir: "~> 1.5",
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:phoenix] ++ Mix.compilers(),
@@ -13,7 +13,7 @@ defmodule Ingest.MixProject do
       deps: deps(),
       # Docs
       name: "Ingest",
-      source_url: "https://gitlab.com/beaucollins/ingest",
+      source_url: "https://gitlab.com/coplusco/ingest",
       docs: [
         main: "Ingest",
         extras: [
