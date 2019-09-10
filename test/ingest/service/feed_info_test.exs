@@ -4,36 +4,26 @@ defmodule Ingest.Service.FeedInfoTest do
 
   import Ingest.HTMLHelpers
   import Traverse.Matcher
+  import Requestor
+
+  alias Ingest.Service.FeedInfo
 
   setup do
     %{opts: Ingest.Service.FeedInfo.init([])}
   end
 
-  test "GET feed", %{opts: opts} do
-    conn = conn(:get, "/" <> Ingest.Service.Discover.encode_uri("example.blog"))
-    conn = Ingest.Service.FeedInfo.call(conn, opts)
-
-    assert conn.state == :sent
-    assert conn.status == 200
+  test_request FeedInfo,
+               [],
+               :get,
+               "/" <> Ingest.Service.Discover.encode_uri("example.blog/feed") do
     assert conn.resp_body |> text(class_name_is("feed-title")) == "Very Legal & Very Cool"
   end
 
-  test "GET missing feed", %{opts: opts} do
-    conn = conn(:get, "/lol.blog")
-    conn = Ingest.Service.FeedInfo.call(conn, opts)
-
-    assert conn.state == :sent
-    assert conn.status == 200
+  test_request FeedInfo, [], :get, "/lol.blog" do
     assert conn.resp_body |> text(class_name_is("feed-meta")) === "Could not fetch feed\nlol.blog"
   end
 
-  test "GET redirected feed", %{opts: opts} do
-    conn = conn(:get, "/redirect.blog")
-    conn = Ingest.Service.FeedInfo.call(conn, opts)
-
-    assert conn.state == :sent
-    assert conn.status == 200
-
+  test_request FeedInfo, [], :get, "/redirect.blog" do
     assert conn.resp_body |> text(class_name_is("feed-meta")) ===
              "Could not fetch feed\nredirect.blog"
 
@@ -41,13 +31,7 @@ defmodule Ingest.Service.FeedInfoTest do
              "Reason:\nResponse 301 redirect to http://new.blog"
   end
 
-  test "GET invalid feed", %{opts: opts} do
-    conn = conn(:get, "/invalid.blog")
-    conn = Ingest.Service.FeedInfo.call(conn, opts)
-
-    assert conn.state == :sent
-    assert conn.status == 200
-
+  test_request FeedInfo, [], :get, "/invalid.blog" do
     assert conn.resp_body |> text(class_name_is("feed-meta")) ===
              "Could not parse feed: No valid parser for XML."
 
@@ -58,13 +42,7 @@ defmodule Ingest.Service.FeedInfoTest do
              "<invalid>"
   end
 
-  test "GET JSON feed", %{opts: opts} do
-    conn = conn(:get, "/jsonfeed.blog")
-    conn = Ingest.Service.FeedInfo.call(conn, opts)
-
-    assert conn.state == :sent
-    assert conn.status == 200
-
+  test_request FeedInfo, [], :get, "/jsonfeed.blog" do
     assert conn.resp_body |> text(class_name_is("feed-title")) === "JSONFeed Blog"
   end
 end

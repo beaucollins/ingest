@@ -29,7 +29,15 @@ defmodule Ingest.Web.Views do
     end
   end
 
-  defp feed_title(%{} = feed), do: Map.get(feed, "title", Map.get(feed, :title))
+  defp feed_title(%{} = feed), do: feed_title(Map.get(feed, "title", Map.get(feed, :title)))
+
+  defp feed_title("") do
+    feed_title(nil)
+  end
+
+  defp feed_title(title) when is_binary(title) do
+    title
+  end
 
   defp feed_title(_feed) do
     content_tag(:em, "Untitled")

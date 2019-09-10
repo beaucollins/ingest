@@ -46,7 +46,15 @@ defmodule Ingest.Proxy do
     """
   end
 
-  defp content({"example.blog", _}) do
+  defp content({"example.blog", "/"}) do
+    """
+    <html>
+      <link title="" rel="alternate" href="/feed" />
+      <link title="Example Title" rel="alternate" href="/feed" />
+    """
+  end
+
+  defp content({"example.blog", "/feed"}) do
     File.read!("test/fixtures/example.blog-rss.xml")
   end
 

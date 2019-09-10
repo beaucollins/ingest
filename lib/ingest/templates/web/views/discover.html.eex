@@ -1,22 +1,28 @@
 <% alias Ingest.Service.Discover %>
+<section class="site-results">
 <%= for {status, host, feeds} <- @feeds do %>
-<div>
-	<%= host %>
-	<%= case status do %>
-	<% :ok -> %>
-		<ul>
-		<%= for feed <- feeds do %>
-			<li>
-				<%= if feed.title == nil, do: "<em>Untitled</em>", else: feed.title %>
-				<a href="/info/<%= feed |> Ingest.Feed.url |> Discover.encode_uri %>">
-					<%= feed |> Ingest.Feed.url |> URI.to_string %>
-				</a>
-				(<%= feed.type %>)
-			</li>
+<section class="site-feeds">
+	<div>
+		<%= host %>
+		<%= case status do %>
+		<% :ok -> %>
+			<ul class="site-feed-list">
+			<%= for feed <- feeds do %>
+				<li>
+					<span class="feed-title"><%= feed_title feed.title %></span>
+					<span class="feed-details">
+						<a href="/info/<%= feed |> Ingest.Feed.url |> Discover.encode_uri %>">
+							<%= feed |> Ingest.Feed.url |> URI.to_string %>
+						</a>
+						<span class="feed-type"><%= feed.type %></span>
+					</span>
+				</li>
+			<% end %>
+			</ul>
+		<% _ -> %>
+			<strong>Error</strong>
 		<% end %>
-		</ul>
-	<% _ -> %>
-		<strong>Error</strong>
-	<% end %>
-</div>
+	</div>
+</section>
 <% end %>
+</section>

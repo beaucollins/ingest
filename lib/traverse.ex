@@ -55,6 +55,19 @@ defmodule Traverse do
   def query(document, matcher), do: Traverse.Matcher.query(document, matcher)
 
   @doc """
+  Query a document for all matching fragments.
+
+  See `Traverse.Matcher.query_all/2`
+  """
+  def query_all(document, matcher) when is_binary(document) do
+    document
+    |> Traverse.parse()
+    |> query_all(matcher)
+  end
+
+  def query_all(document, matcher), do: Traverse.Matcher.query_all(document, matcher)
+
+  @doc """
   Transform the content of an HTML document.
 
   See `Traverse.Transformer.map/2`.
