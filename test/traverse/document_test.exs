@@ -47,13 +47,13 @@ defmodule Traverse.DocumentTest do
   end
 
   test "node_content" do
-    content = """
-    <div><strong>Hello</strong> World</div>
-    """
-    |> Traverse.parse()
-    |> Traverse.Document.node_content()
+    content =
+      """
+      <div><strong>Hello</strong> World</div>
+      """
+      |> Traverse.parse()
+      |> Traverse.Document.node_content()
 
     assert content === "Hello\nWorld"
-
   end
 end

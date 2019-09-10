@@ -8,7 +8,7 @@ defmodule Ingest.RSSTest do
       %{
         feed: %RSS{
           url: "http://example.blig/feed.rss",
-          title: "Awesome Feed",
+          title: "Awesome Feed"
         }
       }
     end

@@ -55,9 +55,3 @@ defmodule Ingest.Feed do
     |> String.starts_with?("{")
   end
 end
-
-defmodule Ingest.JSONFeed do
-  def parse(content) do
-    Jason.decode!(content)
-  end
-end

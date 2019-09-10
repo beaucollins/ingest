@@ -37,7 +37,7 @@ defmodule Traverse.Matcher do
     node |> Document.children() |> stream(matcher)
   end
 
-    @doc """
+  @doc """
   Stream over every node within the document. Optionally provide a
   matcher that filters for specific nodes.
 
@@ -68,36 +68,38 @@ defmodule Traverse.Matcher do
   end
 
   def stream(document, matcher, [mode: mode] = _options) do
-    stream = document
-    |> Stream.unfold(fn
-      # No more items, we're done
-      [] ->
-        nil
+    stream =
+      document
+      |> Stream.unfold(fn
+        # No more items, we're done
+        [] ->
+          nil
 
-      # A single node, should be the root node
-      # return the node and queue up the node's children
-      {_, _, children} = node ->
-        {node, children}
+        # A single node, should be the root node
+        # return the node and queue up the node's children
+        {_, _, children} = node ->
+          {node, children}
 
-      # A list of nodes to process, the first beig a DOM node
-      # Append its children to the list to be iterated on later
-      # NOTE: prepending items is preferred to `Kernal.++/2`
-      [{_, _, children} = node | rest] ->
-        {node, case mode do
-          :breadth -> rest ++ children
-          :depth -> children ++ rest
-        end}
+        # A list of nodes to process, the first beig a DOM node
+        # Append its children to the list to be iterated on later
+        # NOTE: prepending items is preferred to `Kernal.++/2`
+        [{_, _, children} = node | rest] ->
+          {node,
+           case mode do
+             :breadth -> rest ++ children
+             :depth -> children ++ rest
+           end}
 
-      # A text node or comment node, return the node and continue
-      # with the rest
-      [text | rest] ->
-        {text, rest}
+        # A text node or comment node, return the node and continue
+        # with the rest
+        [text | rest] ->
+          {text, rest}
 
-      # When streaming a document fragment that is empty as the
-      # initial item, Stream.unfold/3 receives nil, Stream is done
-      nil ->
-        nil
-    end)
+        # When streaming a document fragment that is empty as the
+        # initial item, Stream.unfold/3 receives nil, Stream is done
+        nil ->
+          nil
+      end)
 
     case matcher do
       nil -> stream
@@ -310,15 +312,19 @@ defmodule Traverse.Matcher do
     fn
       {_element, atts, _children} ->
         Enum.any?(atts, fn
-          { "class", value } ->
+          {"class", value} ->
             String.split(value, " ")
             |> Enum.any?(fn
               ^class -> true
               _ -> false
             end)
-          _ -> false
+
+          _ ->
+            false
         end)
-      _ -> false
+
+      _ ->
+        false
     end
   end
 end

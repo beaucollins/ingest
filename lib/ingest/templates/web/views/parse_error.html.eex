@@ -1,4 +1,6 @@
-Could not parse feed: <%= Exception.message(@exception) %>
+<section class="feed-meta">
+	Could not parse feed: <%= Exception.message(@exception) %>
+</section>
 <hr />
 <pre>
 <%= @body %>

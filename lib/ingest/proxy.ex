@@ -17,9 +17,8 @@ defmodule Ingest.Proxy do
   end
 
   defp send_html(conn, {status, headers, content}) do
-    Enum.reduce(headers, conn, fn\
-      {key, value}, conn ->
-        conn |> put_resp_header(key, value)
+    Enum.reduce(headers, conn, fn {key, value}, conn ->
+      conn |> put_resp_header(key, value)
     end)
     |> put_resp_content_type("text/html")
     |> send_resp(status, content)
@@ -53,6 +52,10 @@ defmodule Ingest.Proxy do
 
   defp content({"redirect.blog", _}) do
     {301, [{"location", "http://new.blog"}], "Redirect"}
+  end
+
+  defp content({"invalid.blog", _}) do
+    "<invalid>"
   end
 
   defp content(_) do

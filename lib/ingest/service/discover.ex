@@ -27,5 +27,4 @@ defmodule Ingest.Service.Discover do
   def encode_uri(uri) when is_binary(uri) do
     URI.encode(uri, &URI.char_unreserved?/1)
   end
-
 end
