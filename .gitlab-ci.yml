@@ -12,15 +12,17 @@ before_script:
 test:
   stage: test
   script:
-  - mix test
+  - mix test --cover
+  artifacts:
+    paths:
+    - cover
 
 docs:
   stage: deploy
   script:
   - mix docs
-  - mv doc public
   only:
   - master
   artifacts:
     paths:
-    - public
+    - doc
