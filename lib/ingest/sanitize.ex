@@ -36,17 +36,17 @@ defmodule Ingest.Sanitize do
             a
             b bdi bdo blockquote br
             cite code
-            data dd dfn dl dt
+            data dd dfn div dl dt
             em
             figcaption figure
             h1 h2 h3 h4 h5 h6 hr
-            i img
+            i iframe img
             li
             mark
             ol
             p pre
             q
-            s small strong subsup
+            s small span strong subsup
             table tbody td tfoot thead time tr
             u ul
             var

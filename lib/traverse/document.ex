@@ -83,17 +83,9 @@ defmodule Traverse.Document do
       ""
 
   """
-  # def node_content(fragment, concat_with \\ "\n")
-
-  # def node_content(nil, _concat_with), do: nil
-
-  # def node_content(fragment, _concat_with) when is_binary(fragment) do
-  #   fragment |> String.trim()
-  # end
-
   def node_content(fragment, concat_with \\ "\n") do
     fragment
-    |> query_all(Traverse.Matcher.is_text_element())
+    |> Traverse.Matcher.stream(Traverse.Matcher.is_text_element(), [mode: :depth])
     |> Stream.map(&String.trim/1)
     |> Enum.reduce(
       "",

@@ -17,4 +17,15 @@ defmodule Ingest.Service.Discover do
 
     render(conn, "discover.html", %{feeds: feeds})
   end
+
+  def encode_uri(%URI{} = uri) do
+    uri
+    |> URI.to_string()
+    |> encode_uri
+  end
+
+  def encode_uri(uri) when is_binary(uri) do
+    URI.encode(uri, &URI.char_unreserved?/1)
+  end
+
 end

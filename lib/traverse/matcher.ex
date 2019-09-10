@@ -37,18 +37,38 @@ defmodule Traverse.Matcher do
     node |> Document.children() |> stream(matcher)
   end
 
-  @doc """
-  Stream over the document and filter enumerated elements based on matcher.
+    @doc """
+  Stream over every node within the document. Optionally provide a
+  matcher that filters for specific nodes.
+
+  Supports a depth first or breadth first graph traversal via `options[:mode]`.
+
+  Default mode is `:breadth`.
+
+  Example, when searching by `:breadth`, sibling nodes appear before child nodes:
+
+      iex> "<div><span><strong></strong></span><em></em></div>"
+      ...> |> Traverse.parse()
+      ...> |> Traverse.Matcher.stream([mode: :breadth])
+      ...> |> Enum.map(fn {tag, _, _ } -> tag end)
+      ["div", "span", "em", "strong"]
+
+   When searching by `:depth`, child nodes appear before sibling nodes.
+
+      iex> "<div><span><strong></strong></span><em></em></div>"
+      ...> |> Traverse.parse()
+      ...> |> Traverse.Matcher.stream([mode: :depth])
+      ...> |> Enum.map(fn {tag, _, _ } -> tag end)
+      ["div", "span", "strong", "em"]
   """
-  def stream(document, matcher) do
-    stream(document) |> Stream.filter(matcher)
+  def stream(document, matcher \\ nil, options \\ [mode: :breadth])
+
+  def stream(document, [mode: _mode] = options, _options) do
+    stream(document, nil, options)
   end
 
-  @doc """
-  Stream over every node within the document using a breadth first search.
-  """
-  def stream(document) do
-    document
+  def stream(document, matcher, [mode: mode] = _options) do
+    stream = document
     |> Stream.unfold(fn
       # No more items, we're done
       [] ->
@@ -63,7 +83,10 @@ defmodule Traverse.Matcher do
       # Append its children to the list to be iterated on later
       # NOTE: prepending items is preferred to `Kernal.++/2`
       [{_, _, children} = node | rest] ->
-        {node, rest ++ children}
+        {node, case mode do
+          :breadth -> rest ++ children
+          :depth -> children ++ rest
+        end}
 
       # A text node or comment node, return the node and continue
       # with the rest
@@ -75,6 +98,11 @@ defmodule Traverse.Matcher do
       nil ->
         nil
     end)
+
+    case matcher do
+      nil -> stream
+      exists -> Stream.filter(stream, exists)
+    end
   end
 
   @doc """
@@ -270,6 +298,26 @@ defmodule Traverse.Matcher do
   def is_text_element do
     fn
       content when is_binary(content) -> true
+      _ -> false
+    end
+  end
+
+  def class_name_is(class) do
+    attribute_is("class", class)
+  end
+
+  def has_class_name(class) do
+    fn
+      {_element, atts, _children} ->
+        Enum.any?(atts, fn
+          { "class", value } ->
+            String.split(value, " ")
+            |> Enum.any?(fn
+              ^class -> true
+              _ -> false
+            end)
+          _ -> false
+        end)
       _ -> false
     end
   end

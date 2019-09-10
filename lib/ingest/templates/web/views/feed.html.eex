@@ -2,7 +2,7 @@
 <table>
 	<tbody>
 		<tr><th scope="row">URL</th><td><%= feed_link(@feed) %></td></tr>
-		<tr><th scope="row">Title</th><td><%= feed_title(@feed) %></td></tr>
+		<tr><th scope="row">Title</th><td class="feed-title"><%= feed_title(@feed) %></td></tr>
 		<tr><th scope="row">Description</th><td><%=  feed_description(@feed) %></td></tr>
 		<tr><th></th><td><%= Map.keys(@feed) |> Enum.map(&to_string/1) |> Enum.join(", ") %></td></tr>
 	</tbody>
