@@ -34,7 +34,7 @@ defmodule Ingest.Service.FeedInfoTest do
     assert conn.state == :sent
     assert conn.status == 200
     assert conn.resp_body |> text(class_name_is("feed-meta")) === "Could not fetch feed\nredirect.blog"
-    assert conn.resp_body |> text(has_class_name("fetch-error")) === "Reason:\nResponse 301"
+    assert conn.resp_body |> text(has_class_name("fetch-error")) === "Reason:\nResponse 301 redirect to http://new.blog"
   end
 
 end

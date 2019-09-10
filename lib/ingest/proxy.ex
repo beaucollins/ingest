@@ -17,14 +17,12 @@ defmodule Ingest.Proxy do
   end
 
   defp send_html(conn, {status, headers, content}) do
-    conn |> put_resp_content_type("text/html")
-
-    headers |> Enum.each(fn\
-      {key, value} ->
+    Enum.reduce(headers, conn, fn\
+      {key, value}, conn ->
         conn |> put_resp_header(key, value)
     end)
-
-    conn |> send_resp(status, content)
+    |> put_resp_content_type("text/html")
+    |> send_resp(status, content)
   end
 
   defp send_html(conn, content) do
@@ -54,7 +52,7 @@ defmodule Ingest.Proxy do
   end
 
   defp content({"redirect.blog", _}) do
-    {301, %{"location" => "new.blog"}, "Redirect"}
+    {301, [{"location", "http://new.blog"}], "Redirect"}
   end
 
   defp content(_) do
