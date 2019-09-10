@@ -1,6 +1,6 @@
 defmodule Ingest.JSONFeed do
   @doc """
-  ATM uses `Jason.decode!\1`
+  ATM uses `Jason.decode!/1`
 
       iex> \"\"\"
       ...> {"hello": "world"}
