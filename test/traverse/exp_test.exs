@@ -1,6 +1,7 @@
 defmodule Traverse.ExpTest do
   use ExUnit.Case
 
+  import Traverse.Document
   import Traverse.Matcher
 
   test "descendants" do
@@ -20,7 +21,7 @@ defmodule Traverse.ExpTest do
       """)
 
     assert document
-           |> stream(element_name_is("div"))
+           |> Traverse.Document.stream(element_name_is("div"))
            |> Stream.flat_map(&stream_children(&1, "class" |> attribute_is("thing")))
            |> Enum.to_list() ===
              [{"span", [{"id", "correct"}, {"class", "thing"}], []}]

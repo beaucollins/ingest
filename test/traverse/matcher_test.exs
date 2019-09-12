@@ -18,7 +18,7 @@ defmodule Traverse.MatcherTest do
   end
 
   test "graph stream", context do
-    stream = Matcher.stream(context[:graph])
+    stream = Traverse.Document.stream(context[:graph])
 
     identifier = fn
       text when is_binary(text) -> {:text, text}
@@ -43,7 +43,7 @@ defmodule Traverse.MatcherTest do
 
   test "filter stream", context do
     matches =
-      Matcher.stream(context[:graph], Matcher.element_name_is("div"))
+      Traverse.Document.stream(context[:graph], Matcher.element_name_is("div"))
       |> Enum.to_list()
 
     assert [
@@ -54,7 +54,7 @@ defmodule Traverse.MatcherTest do
 
   test "query for the first match", context do
     assert {"div", [], ["Hello ", {"span", [], ["there"]}, "."]} ===
-             Matcher.query(
+             Traverse.query(
                context[:graph],
                Matcher.element_name_is("div")
                |> Matcher.or_matches(Matcher.element_name_is("span"))

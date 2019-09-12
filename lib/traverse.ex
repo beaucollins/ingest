@@ -22,8 +22,8 @@ defmodule Traverse do
       ...>   <head>
       ...>     <link rel="alternate" type="application/json" href="http://example.blog/feed/rss"/>
       ...> )
-      ...> |> Traverse.parse
-      ...> |> query_all(
+      ...> |> Traverse.parse()
+      ...> |> Traverse.query_all(
       ...>   element_name_is("link")
       ...>   |> and_matches("rel" |> attribute_is("alternate"))
       ...>)
@@ -51,7 +51,7 @@ defmodule Traverse do
     |> query(matcher)
   end
 
-  def query(document, matcher), do: Traverse.Matcher.query(document, matcher)
+  def query(document, matcher), do: Traverse.Document.query(document, matcher)
 
   @doc """
   Query a document for all matching fragments.
@@ -64,7 +64,7 @@ defmodule Traverse do
     |> query_all(matcher)
   end
 
-  def query_all(document, matcher), do: Traverse.Matcher.query_all(document, matcher)
+  def query_all(document, matcher), do: Traverse.Document.query_all(document, matcher)
 
   @doc """
   Transform the content of an HTML document.

@@ -37,7 +37,7 @@ defmodule Ingest.Service.FeedInfoTest do
 
     assert conn.resp_body
            |> Traverse.parse()
-           |> query_all(element_name_is("pre"))
+           |> Traverse.query_all(element_name_is("pre"))
            |> Traverse.Document.node_content() ===
              "<invalid>"
   end

@@ -4,44 +4,6 @@ defmodule Traverse.Document do
   """
 
   @doc """
-  Find DOM elements that return `true` for the given matcher.
-
-  Find all nodes that have`id="two"`
-
-      iex> Traverse.parse(~s(<html><body><div /><div id="two">Hello</div>))
-      ...> |> Traverse.Document.query_all(Traverse.Matcher.id_is("two"))
-      [{"div", [{"id", "two"}], ["Hello"]}]
-
-  Find all nodes that are `<span>` elements:
-
-      iex> Traverse.parse(~s(<html><body><span>1</span><span>2</span><div><span>3</span></html>))
-      ...> |> Traverse.Document.query_all(Traverse.Matcher.element_name_is("span"))
-      [{"span", [], ["1"]}, {"span", [], ["2"]}, {"span", [], ["3"]}]
-
-  Find all nodes that are `<span>` elements and have a `class="important"` attribute:
-
-      iex> import Traverse.Matcher
-      iex> Traverse.parse(~s(
-      ...>   <html>
-      ...>     <span>Not important</span>
-      ...>     <span class="important">Important</span>
-      ...>     <div class="important"/>
-      ...> ))
-      ...> |> Traverse.Document.query_all(
-      ...>     attribute_is("class", "important")
-      ...>     |> and_matches(element_name_is("span"))
-      ...> )
-      [{"span", [{"class", "important"}], ["Important"]}]
-  """
-  def query_all(document, matcher) do
-    Traverse.Matcher.query_all(document, matcher)
-  end
-
-  def query(document, matcher) do
-    Traverse.Matcher.query(document, matcher)
-  end
-
-  @doc """
   Children of a given node. If `node` is not a element Tuple, returns
   an empty list.
 
@@ -85,7 +47,7 @@ defmodule Traverse.Document do
   """
   def node_content(fragment, concat_with \\ "\n") do
     fragment
-    |> Traverse.Matcher.stream(Traverse.Matcher.is_text_element(), mode: :depth)
+    |> stream(Traverse.Matcher.is_text_element(), mode: :depth)
     |> Stream.map(&String.trim/1)
     |> Enum.reduce(
       "",
@@ -174,5 +136,129 @@ defmodule Traverse.Document do
     defp as_string({key, value}) do
       key <> "=\"" <> value <> "\""
     end
+  end
+
+    @doc """
+  Stream over every node within the document. Optionally provide a
+  matcher that filters for specific nodes.
+
+  Supports a depth first or breadth first graph traversal via `options[:mode]`.
+
+  Default mode is `:breadth`.
+
+  Example, when searching by `:breadth`, sibling nodes appear before child nodes:
+
+      iex> "<div><span><strong></strong></span><em></em></div>"
+      ...> |> Traverse.parse()
+      ...> |> Traverse.Document.stream([mode: :breadth])
+      ...> |> Enum.map(fn {tag, _, _ } -> tag end)
+      ["div", "span", "em", "strong"]
+
+   When searching by `:depth`, child nodes appear before sibling nodes.
+
+      iex> "<div><span><strong></strong></span><em></em></div>"
+      ...> |> Traverse.parse()
+      ...> |> Traverse.Document.stream([mode: :depth])
+      ...> |> Enum.map(fn {tag, _, _ } -> tag end)
+      ["div", "span", "strong", "em"]
+  """
+  def stream(document, matcher \\ nil, options \\ [mode: :breadth])
+
+  def stream(document, [mode: _mode] = options, _options) do
+    stream(document, nil, options)
+  end
+
+  def stream(document, matcher, [mode: mode] = _options) do
+    stream =
+      document
+      |> Stream.unfold(fn
+        # No more items, we're done
+        [] ->
+          nil
+
+        # A single node, should be the root node
+        # return the node and queue up the node's children
+        {_, _, children} = node ->
+          {node, children}
+
+        # A list of nodes to process, the first beig a DOM node
+        # Append its children to the list to be iterated on later
+        # NOTE: prepending items is preferred to `Kernal.++/2`
+        [{_, _, children} = node | rest] ->
+          {node,
+           case mode do
+             :breadth -> rest ++ children
+             :depth -> children ++ rest
+           end}
+
+        # A text node or comment node, return the node and continue
+        # with the rest
+        [text | rest] ->
+          {text, rest}
+
+        # When streaming a document fragment that is empty as the
+        # initial item, Stream.unfold/3 receives nil, Stream is done
+        nil ->
+          nil
+      end)
+
+    case matcher do
+      nil -> stream
+      exists -> Stream.filter(stream, exists)
+    end
+  end
+
+    @doc """
+  Stream over a DOM node's children.
+  """
+  def stream_children(node, matcher) do
+    node |> children() |> stream(matcher)
+  end
+
+    @doc """
+  Find the first element in the document that matches the matcher
+  """
+  def query(document, matcher) do
+    stream(document, matcher)
+    |> Stream.take(1)
+    |> Enum.to_list()
+    |> case do
+      [] -> nil
+      [head | _rest] -> head
+    end
+  end
+
+  @doc """
+  Find DOM elements that return `true` for the given matcher.
+
+  Find all nodes that have`id="two"`
+
+      iex> Traverse.parse(~s(<html><body><div /><div id="two">Hello</div>))
+      ...> |> Traverse.Document.query_all(Traverse.Matcher.id_is("two"))
+      [{"div", [{"id", "two"}], ["Hello"]}]
+
+  Find all nodes that are `<span>` elements:
+
+      iex> Traverse.parse(~s(<html><body><span>1</span><span>2</span><div><span>3</span></html>))
+      ...> |> Traverse.Document.query_all(Traverse.Matcher.element_name_is("span"))
+      [{"span", [], ["1"]}, {"span", [], ["2"]}, {"span", [], ["3"]}]
+
+  Find all nodes that are `<span>` elements and have a `class="important"` attribute:
+
+      iex> import Traverse.Matcher
+      iex> Traverse.parse(~s(
+      ...>   <html>
+      ...>     <span>Not important</span>
+      ...>     <span class="important">Important</span>
+      ...>     <div class="important"/>
+      ...> ))
+      ...> |> Traverse.Document.query_all(
+      ...>     attribute_is("class", "important")
+      ...>     |> and_matches(element_name_is("span"))
+      ...> )
+      [{"span", [{"class", "important"}], ["Important"]}]
+  """
+  def query_all(document, matcher) do
+    stream(document, matcher) |> Enum.to_list()
   end
 end
