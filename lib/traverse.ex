@@ -29,7 +29,7 @@ defmodule Traverse do
       ...>)
       [{"link", [{"rel", "alternate"}, {"type", "application/json"}, {"href", "http://example.blog/feed/rss"}], []}]
 
-    The workhorse of the query API is `Traverse.Matcher.stream/1` which uses `Stream.unfold/2`
+    The workhorse of the query API is `Traverse.Document.stream/1` which uses `Stream.unfold/2`
     to iterate oven each node within the DOM and execute a compatible matcher function.
   """
   @doc """
@@ -43,7 +43,7 @@ defmodule Traverse do
   Query a document or document fragment using a Matcher to identify parts of the
   DOM to collect.
 
-  See `Traverse.Matcher.query/2`.
+  See `Traverse.Document.query/2`.
   """
   def query(document, matcher) when is_binary(document) do
     document
@@ -56,7 +56,7 @@ defmodule Traverse do
   @doc """
   Query a document for all matching fragments.
 
-  See `Traverse.Matcher.query_all/2`
+  See `Traverse.Document.query_all/2`
   """
   def query_all(document, matcher) when is_binary(document) do
     document
