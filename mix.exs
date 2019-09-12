@@ -4,7 +4,7 @@ defmodule Ingest.MixProject do
   def project do
     [
       app: :ingest,
-      version: "0.2.0",
+      version: "0.2.2",
       elixir: "~> 1.5",
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:phoenix] ++ Mix.compilers(),
