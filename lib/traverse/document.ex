@@ -4,7 +4,7 @@ defmodule Traverse.Document do
   """
 
   @doc """
-  Find DOM elements that return true for the given matcher.
+  Find DOM elements that return `true` for the given matcher.
 
   Find all nodes that have`id="two"`
 

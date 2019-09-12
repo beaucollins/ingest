@@ -1,9 +1,8 @@
 defmodule Traverse do
   @moduledoc """
-  Module for selecting DOM nodes within a graph using selectors that are analagous
-  [Document.querySelector](https://developer.mozilla.org/en-US/docs/Web/API/Document/querySelector).
+  Parse, query and manipulate a Document Object Model (DOM) graph.
 
-  For example, pull out the text from the `<title>` node within an HTML document:
+  For example, return the text from the `<title>` node within an HTML document:
 
       iex> \"\"\"
       ...> <html>
@@ -15,8 +14,8 @@ defmodule Traverse do
       ...> |> Traverse.Document.node_content()
       "The Best Page on the Internet 🚀"
 
-  The `Ingest` application uses `Traverse` to find `<link type="alternate">` elements find RSS feeds
-  for a given document.
+  The `Ingest` application uses `Traverse` to find `<link type="alternate">` elements
+  to find RSS feeds within a given document.
 
       iex> import Traverse.Matcher
       iex> ~s(<html>
@@ -72,10 +71,10 @@ defmodule Traverse do
 
   See `Traverse.Transformer.map/2`.
 
-  A transformer is as function that takes in an HTML fragment (node, node list, text, or comment)
-  and returns a fragment to be used in the new returned document.
+  A transformer is as function that takes in an HTML Document or fragment (node, node list, text, or comment)
+  and returns a fragment to replace it with.
 
-  Remove all `<script>` tags from a document:
+  For example, remove all `<script>` tags from a document:
 
       iex> import Traverse.Transformer
       iex> \"\"\"
