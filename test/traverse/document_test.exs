@@ -44,6 +44,11 @@ defmodule Traverse.DocumentTest do
     test "comment fragment" do
       assert Document.to_string({:comment, "Not content"}) === "<!--Not content-->"
     end
+
+    test "attributes escaped" do
+      assert Document.to_string({"div", [{"data-thing", "{\"json\": \"value\"}"}], [ "hello"]}) |> Document.to_string()
+       === ~s[<div data-thing="{\"json\": \"value\"}">hello</div>]
+    end
   end
 
   test "node_content" do

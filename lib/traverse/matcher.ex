@@ -2,7 +2,7 @@ defmodule Traverse.Matcher do
   alias Traverse.Document
 
   @moduledoc """
-  Utilites for querying a DOM.
+  Functions for querying a DOM or DOM fragment.
   """
   @type matcher :: (:mochiweb_html.html_node() -> boolean)
 
@@ -132,8 +132,27 @@ defmodule Traverse.Matcher do
     end
   end
 
-  def element_is_one_of(element_names) do
+  @doc """
+  Matches an element if it is one of `element_names`.
+
+  Can be a list or space seperated string of names.
+
+      iex> ~s[<html><span></span><div></div><em></em>]
+      ...> |> Traverse.query_all(Traverse.Matcher.element_is_one_of("div em"))
+      [{"div", [], []}, {"em", [], []}]
+
+  Or
+
+      iex> ~s[<html><span></span><div></div><em></em>]
+      ...> |> Traverse.query_all(Traverse.Matcher.element_is_one_of(["div", "em"]))
+      [{"div", [], []}, {"em", [], []}]
+  """
+  def element_is_one_of(element_names) when is_list(element_names) do
     matches_any(element_names |> Enum.map(&element_name_is/1))
+  end
+
+  def element_is_one_of(element_names) when is_binary(element_names) do
+    element_is_one_of(element_names |> String.split(" "))
   end
 
   @doc """
@@ -208,6 +227,10 @@ defmodule Traverse.Matcher do
     end
   end
 
+  @doc """
+  Finds elements in a DOM with attribute of `name` which has a value that begins
+  with `prefix`.
+  """
   def attribute_begins_with(name, prefix) do
     fn
       {_, atts, _} ->
@@ -304,10 +327,20 @@ defmodule Traverse.Matcher do
     end
   end
 
+  @doc """
+  Matches elements whose `class` attribute is exactly `class`.
+  """
   def class_name_is(class) do
     attribute_is("class", class)
   end
 
+  @doc """
+  Matches elements with a class attribute that contains the `class`.
+
+      iex> ~s[<html><div class="class-a class-b class-c">Hello</div>]
+      ...> |> Traverse.query(Traverse.Matcher.has_class_name("class-b"))
+      {"div", [{"class", "class-a class-b class-c"}], ["Hello"]}
+  """
   def has_class_name(class) do
     fn
       {_element, atts, _children} ->
