@@ -24,7 +24,7 @@ defmodule Ingest.Sanitize do
     |> Traverse.map(
       transform_first([
         transform(
-          element_is_one_of(~w[script iframe]),
+          element_is_one_of(~w[script]),
           remove_content()
         ),
         transform(
@@ -40,7 +40,7 @@ defmodule Ingest.Sanitize do
             em
             figcaption figure
             h1 h2 h3 h4 h5 h6 hr
-            i img
+            i iframe img
             li
             mark
             ol

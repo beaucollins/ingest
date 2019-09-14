@@ -90,6 +90,10 @@ defmodule Traverse.Document do
     as_string(document)
   end
 
+  defp as_string({"iframe", atts, []}) do
+    as_string({"iframe", atts, [""]})
+  end
+
   defp as_string({element, atts, []}) do
     "<" <> element <> attribute_list_string(atts) <> " />"
   end

@@ -61,4 +61,11 @@ defmodule Traverse.DocumentTest do
 
     assert content === "Hello\nWorld"
   end
+
+  test "iframe always has closing tag" do
+    html = { "iframe", [], []}
+    |> Traverse.Document.to_string()
+
+    assert html == "<iframe></iframe>"
+  end
 end
