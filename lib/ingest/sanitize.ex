@@ -53,24 +53,10 @@ defmodule Ingest.Sanitize do
             wbr
           )),
           unchanged(),
-          inspect_transform(select_children())
+          select_children()
         )
       ])
     )
     |> Traverse.Document.to_string()
-  end
-
-  defp inspect_transform(transformer) do
-    fn fragment ->
-      transformer.(fragment)
-      |> case do
-        ^fragment ->
-          fragment
-
-        changed ->
-          IO.inspect(fragment, label: "Transformed: ")
-          IO.inspect(changed, label: "Became: ")
-      end
-    end
   end
 end
