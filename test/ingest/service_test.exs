@@ -1,22 +1,18 @@
 defmodule Ingest.ServiceTest do
   use ExUnit.Case
   use Plug.Test
+  import Requestor
 
-  test "get home page" do
-    conn = conn(:get, "/")
-    conn = Ingest.Service.call(conn, Ingest.Service.init([]))
+  test_request(Ingest.Service, [], :get, "/")
+  test_request(Ingest.Service, [], :get, "/info/example.blog%2Afeed")
 
-    assert conn.state == :sent
-    assert conn.status == 200
-  end
-
-  test "get css" do
-    conn = conn(:get, "/style.css")
-    conn = Ingest.Service.call(conn, Ingest.Service.init([]))
-
+  test_request(Ingest.Service, [], :get, "/style.css") do
     assert conn.state == :file
     assert conn.status == 200
-
     assert File.read!("priv/static/style.css") == conn.resp_body
+  end
+
+  test_request Ingest.Service, [], :get, "/not-found" do
+    assert conn.status == 404
   end
 end

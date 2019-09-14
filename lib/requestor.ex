@@ -14,7 +14,6 @@ defmodule Requestor do
       test "#{method} #{path}" do
         conn = conn(unquote(method), unquote(path))
         conn = unquote(plug).call(conn, unquote(plug_options))
-        assert conn.status == 200
         var!(conn) = conn
         unquote(contents)
       end
