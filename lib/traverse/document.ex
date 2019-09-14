@@ -142,7 +142,7 @@ defmodule Traverse.Document do
     end
   end
 
-    @doc """
+  @doc """
   Stream over every node within the document. Optionally provide a
   matcher that filters for specific nodes.
 
@@ -212,14 +212,14 @@ defmodule Traverse.Document do
     end
   end
 
-    @doc """
+  @doc """
   Stream over a DOM node's children.
   """
   def stream_children(node, matcher) do
     node |> children() |> stream(matcher)
   end
 
-    @doc """
+  @doc """
   Find the first element in the document that matches the matcher
   """
   def query(document, matcher) do

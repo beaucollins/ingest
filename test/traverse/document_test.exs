@@ -46,8 +46,9 @@ defmodule Traverse.DocumentTest do
     end
 
     test "attributes escaped" do
-      assert Document.to_string({"div", [{"data-thing", "{\"json\": \"value\"}"}], [ "hello"]}) |> Document.to_string()
-       === ~s[<div data-thing="{\"json\": \"value\"}">hello</div>]
+      assert Document.to_string({"div", [{"data-thing", "{\"json\": \"value\"}"}], ["hello"]})
+             |> Document.to_string() ===
+               ~s[<div data-thing="{\"json\": \"value\"}">hello</div>]
     end
   end
 
@@ -63,8 +64,9 @@ defmodule Traverse.DocumentTest do
   end
 
   test "iframe always has closing tag" do
-    html = { "iframe", [], []}
-    |> Traverse.Document.to_string()
+    html =
+      {"iframe", [], []}
+      |> Traverse.Document.to_string()
 
     assert html == "<iframe></iframe>"
   end
