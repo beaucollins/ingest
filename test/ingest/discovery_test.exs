@@ -44,4 +44,8 @@ defmodule DiscoveryTest do
               [%Feed{host: "http://test.blog", title: "LOL", type: nil, url: "/some/where"}]}
            ]
   end
+
+  test "follows redirect" do
+    assert Discovery.find_feed("http://redirect.blog") == {:error, "http://new.blog", 404}
+  end
 end
