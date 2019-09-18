@@ -59,6 +59,7 @@ section.feed-meta td {
 section.feed-entries {
 	background: var(--color-bg-light);
 	flex: 1;
+	overflow-x: hidden;
 }
 
 section.feed-entries > ol {
@@ -74,10 +75,15 @@ section.feed-entries > ol > li {
 	padding: 40px;
 	border-bottom: 0.5px solid var(--color-bg-dark);
 	max-width: 720px;
+	overflow: hidden;
 }
 
 section.feed-entries > ol > li:last-child {
 	border-bottom: none;
+}
+
+section.feed-entries > ol * {
+	max-width: 100%;
 }
 
 .fetch-error {
