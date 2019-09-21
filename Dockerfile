@@ -1,6 +1,7 @@
 FROM elixir:1.9-alpine
 
-RUN mix local.hex --force;\
+RUN apk add --no-cache bash;\
+	mix local.hex --force;\
 	mix local.rebar --force;
 
 COPY mix.* /var/app/src/
@@ -19,4 +20,7 @@ RUN mix release --path /var/release
 
 RUN rm -fr /var/app/src/
 
+COPY docker-entrypoint.sh /usr/local/bin/
+
+ENTRYPOINT [ "docker-entrypoint.sh" ]
 CMD /var/release/bin/ingest start
