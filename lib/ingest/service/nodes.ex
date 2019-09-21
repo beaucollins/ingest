@@ -1,6 +1,9 @@
 defmodule Ingest.Service.Nodes do
   use Plug.Router
 
+  plug(:match)
+  plug(:dispatch)
+
   get "/" do
     case Jason.encode(%{remote: Node.list(), self: Node.self()}) do
       { :ok, content } ->
