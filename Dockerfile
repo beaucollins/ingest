@@ -13,6 +13,7 @@ COPY lib lib
 COPY config config
 COPY priv priv
 COPY test test
+COPY rel rel
 
 RUN mkdir -p /usr/local/bin
 
