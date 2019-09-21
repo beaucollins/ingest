@@ -7,8 +7,7 @@ defmodule Ingest.Service.Nodes do
   get "/" do
     %{
       remote: Node.list(),
-      self: Node.self(),
-      cookie: Node.get_cookie() |> Atom.to_string() |> String.slice(0, 64)
+      self: Node.self()
     }
     |> Jason.encode()
     |> case do

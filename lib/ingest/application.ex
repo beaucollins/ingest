@@ -10,7 +10,8 @@ defmodule Ingest.Application do
     children = [
       # Starts a worker by calling: Ingest.Worker.start_link(arg)
       # {Ingest.Worker, arg},
-      {Plug.Cowboy, scheme: :http, plug: Ingest.Service}
+      {Plug.Cowboy, scheme: :http, plug: Ingest.Service},
+      Ingest.Net
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
