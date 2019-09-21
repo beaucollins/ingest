@@ -50,6 +50,7 @@ defmodule Ingest.MixProject do
       {:feedraptor, "~> 0.3.0"},
       {:phoenix, "~> 1.4.10"},
       {:phoenix_html, "~> 2.13.3"},
+      {:libcluster, "~>3.1.0"},
       {:ex_doc, "~>0.21", only: :dev, runtime: false}
     ]
   end
