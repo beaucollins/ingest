@@ -4,6 +4,5 @@ defmodule Ingest.Service.NodesTest do
   import Requestor
   alias Ingest.Service.Nodes
 
-  test_request Nodes, [], :get, "/"
-
+  test_request(Nodes, [], :get, "/")
 end

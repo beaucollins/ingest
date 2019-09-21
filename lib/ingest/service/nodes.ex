@@ -5,8 +5,14 @@ defmodule Ingest.Service.Nodes do
   plug(:dispatch)
 
   get "/" do
-    case Jason.encode(%{remote: Node.list(), self: Node.self()}) do
-      { :ok, content } ->
+    %{
+      remote: Node.list(),
+      self: Node.self(),
+      cookie: Node.get_cookie() |> Atom.to_string() |> String.slice(0, 64)
+    }
+    |> Jason.encode()
+    |> case do
+      {:ok, content} ->
         conn
         |> put_resp_content_type("application/json")
         |> send_resp(200, content)
