@@ -13,11 +13,13 @@ defmodule Ingest.Application do
       {Plug.Cowboy, scheme: :http, plug: Ingest.Service},
       {Cluster.Supervisor,
        [
-         swarm_dns_poll: [
-           strategy: Cluster.Strategy.DNSPoll,
-           config: [
-             query: "tasks.ingest",
-             node_basename: "ingest"
+         [
+           swarm_dns_poll: [
+             strategy: Cluster.Strategy.DNSPoll,
+             config: [
+               query: "tasks.ingest",
+               node_basename: "ingest"
+             ]
            ]
          ]
        ]}
