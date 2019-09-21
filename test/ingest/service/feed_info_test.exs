@@ -2,7 +2,6 @@ defmodule Ingest.Service.FeedInfoTest do
   use ExUnit.Case
   use Plug.Test
 
-  import Ingest.HTMLHelpers
   import Traverse.Matcher
   import Requestor
 
@@ -10,6 +9,10 @@ defmodule Ingest.Service.FeedInfoTest do
 
   setup do
     %{opts: Ingest.Service.FeedInfo.init([])}
+  end
+
+  defp text(body_data, query) do
+    body_data |> Traverse.query(query) |> Traverse.Document.node_content()
   end
 
   test_request FeedInfo,
@@ -36,9 +39,7 @@ defmodule Ingest.Service.FeedInfoTest do
              "Could not parse feed: No valid parser for XML."
 
     assert conn.resp_body
-           |> Traverse.parse()
-           |> Traverse.query_all(element_name_is("pre"))
-           |> Traverse.Document.node_content() ===
+           |> text(element_name_is("pre")) ===
              "<invalid>"
   end
 
