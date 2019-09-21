@@ -7,6 +7,7 @@ defmodule Ingest.Service.App do
 
   forward("/discover", to: Ingest.Service.Discover)
   forward("/info", to: Ingest.Service.FeedInfo)
+  forward("/nodes", to: Ingest.Service.Nodes)
 
   get("/", do: conn |> render("form.html", %{url: url_param(conn)}))
 
