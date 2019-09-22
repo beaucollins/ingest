@@ -10,7 +10,7 @@ defmodule Ingest.Application do
     children = [
       # Starts a worker by calling: Ingest.Worker.start_link(arg)
       # {Ingest.Worker, arg},
-      {Plug.Cowboy, scheme: :http, plug: Ingest.Service},
+      {Plug.Cowboy, scheme: :http, plug: Ingest.Service, options: [dispatch: dispatch()]},
       {Cluster.Supervisor,
        [
          [
@@ -45,5 +45,14 @@ defmodule Ingest.Application do
   # whenever the application is updated.
   def config_change(_changed, _new, _removed) do
     :ok
+  end
+
+  defp dispatch() do
+    [
+      {:_, [
+        {"/ws", Ingest.SocketHandler, []},
+        {:_, Plug.Cowboy.Handler, {Ingest.Service, Ingest.Service.init([])}}
+      ]}
+    ]
   end
 end
