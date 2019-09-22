@@ -6,7 +6,7 @@ defmodule Ingest.Service.Nodes do
 
   get "/" do
     %{
-      remote: Node.list(),
+      remote: Node.list([:this, :connected]),
       self: Node.self()
     }
     |> Jason.encode()
