@@ -49,10 +49,11 @@ defmodule Ingest.Application do
 
   defp dispatch() do
     [
-      {:_, [
-        {"/ws", Ingest.SocketHandler, []},
-        {:_, Plug.Cowboy.Handler, {Ingest.Service, Ingest.Service.init([])}}
-      ]}
+      {:_,
+       [
+         {"/ws", Ingest.SocketHandler, []},
+         {"/[...]", Plug.Cowboy.Handler, {Ingest.Service, Ingest.Service.init([])}}
+       ]}
     ]
   end
 end

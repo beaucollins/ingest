@@ -6,7 +6,7 @@ defmodule Ingest.Service do
   plug(Plug.Static,
     from: :ingest,
     at: "/",
-    only: ["style.css"]
+    only: ["style.css", "app.js"]
   )
 
   plug(Ingest.Service.App)
