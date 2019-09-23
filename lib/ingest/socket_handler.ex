@@ -15,7 +15,7 @@ defmodule Ingest.SocketHandler do
     end
   end
 
-  def websocket_handle(frame, state) do
+  def websocket_handle(_frame, state) do
     {:ok, state}
   end
 

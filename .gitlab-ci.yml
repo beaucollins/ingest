@@ -8,6 +8,7 @@ before_script:
   - mix local.hex --force
   - mix local.rebar --force
   - mix deps.get
+  - mix deps.clean
 
 test:
   stage: test
