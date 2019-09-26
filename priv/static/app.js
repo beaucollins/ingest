@@ -29,19 +29,14 @@ function start() {
 	};
 
 	const render = function(state = {node: null, nodes: []}) {
-		ReactDOM.render(e(App, state), document.querySelector('#app'), () => {
-			console.log('ready');
-		});
+		ReactDOM.render(e(App, state), document.querySelector('#app'));
 	}
 
 	connection((event) => {
-		console.log('Event =>', event.data);
 		try {
 			const nodeState = JSON.parse(event.data);
-			console.log('node State', nodeState);
 			render({node: nodeState[0], nodes: nodeState[1]});
 		} catch(error) {
-			console.error('Failed to update nodes', error);
 			render();
 		}
 	});
