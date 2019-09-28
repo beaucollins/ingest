@@ -1,5 +1,13 @@
 defmodule Ingest.Feed do
+  @moduledoc """
+  A "Syndicated" source of information based on RSS, JSONFeed, and
+  potentially other sources (scraping microformats?).
+
+  The identity of a `Feed` is its `:url`. Using an `Ingest.Subscription`
+  one can subscribe to a `Feed`.
+  """
   @derive {Jason.Encoder, only: [:host, :title, :url, :type]}
+  @enforce_keys [:url]
   defstruct host: "", type: "application/rss+xml", title: "", url: ""
 
   def fetch(feed = %__MODULE__{}) do

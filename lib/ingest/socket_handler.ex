@@ -27,7 +27,8 @@ defmodule Ingest.SocketHandler do
       {:nodedown, _node, _type} ->
         reply_nodes(state)
 
-        _ -> {:ok, state}
+      _ ->
+        {:ok, state}
     end
   end
 
@@ -36,6 +37,6 @@ defmodule Ingest.SocketHandler do
   end
 
   defp reply_nodes(state) do
-    {:reply, {:text, nodes() |> Tuple.to_list |> Jason.encode! }, state}
+    {:reply, {:text, nodes() |> Tuple.to_list() |> Jason.encode!()}, state}
   end
 end

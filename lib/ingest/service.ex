@@ -7,9 +7,7 @@ defmodule Ingest.Service do
     from: :ingest,
     at: "/",
     only: ["style.css", "app.js", "monitor.html"]
-
   )
 
   plug(Ingest.Service.App)
-
 end
