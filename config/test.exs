@@ -5,4 +5,4 @@ config :logger, level: :warn
 
 config :ingest, :client, proxy: "http://localhost:5431"
 
-config :mnesia, :dir, "tmp/Mnesia.test"
+config :mnesia, :dir, 'tmp/Mnesia.test'
