@@ -7,6 +7,8 @@ RUN apk add --no-cache bash;\
 COPY mix.* /var/app/src/
 WORKDIR /var/app/src
 
+ENV MIX_ENV=prod
+
 RUN mix deps.get; mix deps.compile;
 
 COPY lib lib
