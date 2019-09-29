@@ -11,12 +11,13 @@ defmodule Ingest.SubscriptionAgent do
 
   defp start_mnesia do
     IO.puts("Starting Mnesia")
+
     with :ok <- :mnesia.create_schema([node()]),
          :ok <- :mnesia.start(),
-         {:ok, nodes} <- :mnesia.change_config(:extra_db_nodes, Node.list),
-         do: nodes
-    |> IO.inspect(label: "Started")
-
+         {:ok, nodes} <- :mnesia.change_config(:extra_db_nodes, Node.list()),
+         do:
+           nodes
+           |> IO.inspect(label: "Started")
 
     :ok
   end

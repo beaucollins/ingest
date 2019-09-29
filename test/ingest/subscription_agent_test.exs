@@ -4,6 +4,6 @@ defmodule Ingest.SubscriptionAgentTest do
   test "start agent" do
     Ingest.SubscriptionAgent.start_link(nil)
 
-    assert :ok === Ingest.SubscriptionAgent.started?
+    assert :ok === Ingest.SubscriptionAgent.started?()
   end
 end
