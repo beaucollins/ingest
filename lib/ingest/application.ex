@@ -10,7 +10,6 @@ defmodule Ingest.Application do
     children = [
       # Starts a worker by calling: Ingest.Worker.start_link(arg)
       # {Ingest.Worker, arg},
-      {Ingest.SubscriptionAgent, []},
       {Plug.Cowboy, scheme: :http, plug: Ingest.Service, options: [dispatch: dispatch()]},
       {Cluster.Supervisor,
        [
