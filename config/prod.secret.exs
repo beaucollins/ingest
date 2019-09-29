@@ -29,7 +29,6 @@ config :ingest, IngestWeb.Endpoint,
 
 config :mnesia, :dir, "Mnesia.ingest"
 
-
 # ## Using releases (Elixir v1.9+)
 #
 # If you are doing OTP releases, you need to instruct Phoenix
