@@ -1,24 +1,19 @@
 defmodule Ingest.SubscriptionAgent do
   use Agent
 
-  def start_link(_state) do
-    Agent.start_link(&start_mnesia/0, name: __MODULE__)
-  end
+  @doc """
+  This is a test
 
-  def started? do
+      iex> Ingest.SubscriptionAgent.start_link(nil)
+      :ok
+      iex> Ingest.SubscriptionAgent.subs()
+      []
+  """
+  def subs do
     Agent.get(__MODULE__, & &1)
   end
 
-  defp start_mnesia do
-    IO.puts("Starting Mnesia")
-
-    with :ok <- :mnesia.create_schema([node()]),
-         :ok <- :mnesia.start(),
-         {:ok, nodes} <- :mnesia.change_config(:extra_db_nodes, Node.list()),
-         do:
-           nodes
-           |> IO.inspect(label: "Started")
-
-    :ok
+  def start_link(_state) do
+    Agent.start_link(fn -> [] end, name: __MODULE__)
   end
 end

@@ -31,8 +31,8 @@ defmodule Ingest.MixProject do
   def application do
     [
       mod: {Ingest.Application, [env: Mix.env()]},
-      extra_applications: [:logger, :runtime_tools],
-      included_applications: [:mnesia]
+      extra_applications: [:logger, :runtime_tools]
+      # included_applications: [:mnesia]
     ]
   end
 
