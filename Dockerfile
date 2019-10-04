@@ -22,7 +22,7 @@ RUN mkdir -p /usr/local/bin
 RUN mix release --path /var/release
 
 RUN rm -fr /var/app/src/
-
+RUN mkdir -p /var/data/ingest
 COPY docker-entrypoint.sh /usr/local/bin/
 
 ENTRYPOINT [ "docker-entrypoint.sh" ]

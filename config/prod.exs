@@ -1,3 +1,3 @@
 use Mix.Config
 
-config :mnesia, :dir, 'Mnesia.ingest'
+config :mnesia, :dir, '/var/data/ingest/Mnesia.ingest'
