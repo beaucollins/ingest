@@ -2,18 +2,18 @@ defmodule Ingest.SubscriptionAgent do
   use Agent
 
   @doc """
-  This is a test
+  Get a list of subscriptions
 
-      iex> Ingest.SubscriptionAgent.start_link(nil)
-      :ok
-      iex> Ingest.SubscriptionAgent.subs()
+      iex> case Ingest.SubscriptionAgent.start_link([]) do
+      ...>  {:ok, subs} -> Ingest.SubscriptionAgent.list(subs)
+      ...> end
       []
   """
-  def subs do
-    Agent.get(__MODULE__, & &1)
+  def list(subs) do
+    Agent.get(subs, & &1)
   end
 
-  def start_link(_state) do
-    Agent.start_link(fn -> [] end, name: __MODULE__)
+  def start_link(opts \\ []) do
+    Agent.start_link(fn -> [] end, opts)
   end
 end

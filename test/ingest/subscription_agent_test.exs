@@ -1,12 +1,14 @@
 defmodule Ingest.SubscriptionAgentTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
 
-  doctest Ingest.Subscription
+  doctest Ingest.SubscriptionAgent
 
-  test "start agent" do
-    {:ok, pid} = Ingest.SubscriptionAgent.start_link(nil)
-    {:error, {:already_started, ^pid}} = Ingest.SubscriptionAgent.start_link(nil)
+  setup do
+    {:ok, subs} = Ingest.SubscriptionAgent.start_link()
+    %{subs: subs}
+  end
 
-    assert [] === Ingest.SubscriptionAgent.subs()
+  test "start agent", %{subs: subs} do
+    assert [] === Ingest.SubscriptionAgent.list(subs)
   end
 end

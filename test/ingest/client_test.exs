@@ -1,5 +1,5 @@
 defmodule Ingest.ClientTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
 
   test "get URL" do
     response =

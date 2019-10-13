@@ -2,7 +2,7 @@ defmodule DiscoveryTest do
   alias Ingest.Feed
   alias Ingest.Discovery
 
-  use ExUnit.Case
+  use ExUnit.Case, async: true
 
   doctest Discovery
 

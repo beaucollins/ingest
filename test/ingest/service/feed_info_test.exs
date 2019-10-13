@@ -1,5 +1,5 @@
 defmodule Ingest.Service.FeedInfoTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
   use Plug.Test
 
   import Traverse.Matcher

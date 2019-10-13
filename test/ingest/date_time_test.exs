@@ -1,5 +1,5 @@
 defmodule Ingest.DateTimeTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
 
   test "fails to parse" do
     assert_raise RuntimeError, fn ->

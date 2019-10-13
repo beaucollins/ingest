@@ -1,5 +1,5 @@
 defmodule Ingest.Service.NodesTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
   use Plug.Test
   import Requestor
   alias Ingest.Service.Nodes

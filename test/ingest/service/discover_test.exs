@@ -1,5 +1,5 @@
 defmodule Ingest.Service.DiscoverTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
   use Plug.Test
   require Requestor
   alias Ingest.Service.Discover
