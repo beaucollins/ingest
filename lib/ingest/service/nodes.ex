@@ -5,10 +5,7 @@ defmodule Ingest.Service.Nodes do
   plug(:dispatch)
 
   get "/" do
-    %{
-      remote: Node.list([:this, :connected]),
-      self: Node.self()
-    }
+    Ingest.Monitor.Nodes.status()
     |> Jason.encode()
     |> case do
       {:ok, content} ->
@@ -19,7 +16,7 @@ defmodule Ingest.Service.Nodes do
       _ ->
         conn
         |> put_resp_content_type("application/json")
-        |> send_resp(200, ~s[{"error": "json"}])
+        |> send_resp(400, ~s[{"error": "json"}])
     end
   end
 end

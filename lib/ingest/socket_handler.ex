@@ -6,8 +6,13 @@ defmodule Ingest.SocketHandler do
   end
 
   def websocket_init(state) do
-    case :net_kernel.monitor_nodes(true, [{:node_type, :all}]) do
-      :ok ->
+    status =
+      with :ok <- :net_kernel.monitor_nodes(true, [{:node_type, :all}]),
+           {:ok, subs} <- Ingest.SubscriptionAgent.start_link(),
+           do: {:ok, Keyword.put(state, :subs, subs)}
+
+    case status do
+      {:ok, state} ->
         reply_nodes(state)
 
       _ ->
@@ -32,11 +37,7 @@ defmodule Ingest.SocketHandler do
     end
   end
 
-  defp nodes do
-    {Node.self(), Node.list([:this, :connected])}
-  end
-
   defp reply_nodes(state) do
-    {:reply, {:text, nodes() |> Tuple.to_list() |> Jason.encode!()}, state}
+    {:reply, {:text, Ingest.Monitor.Nodes.status() |> Jason.encode!()}, state}
   end
 end

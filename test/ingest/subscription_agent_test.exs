@@ -8,7 +8,7 @@ defmodule Ingest.SubscriptionAgentTest do
     %{subs: subs}
   end
 
-  test "start agent", %{subs: subs} do
+  test "list subs", %{subs: subs} do
     assert [] === Ingest.SubscriptionAgent.list(subs)
   end
 end
