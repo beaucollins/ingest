@@ -1,8 +1,8 @@
 defmodule Ingest.Monitor.Nodes do
   @derive Jason.Encoder
-  defstruct current: Node.self(), nodes: Node.list([:this, :connected])
+  defstruct [:nodes, current: Node.self()]
 
   def status() do
-    %Ingest.Monitor.Nodes{}
+    %Ingest.Monitor.Nodes{nodes: Node.list([:this, :connected])}
   end
 end

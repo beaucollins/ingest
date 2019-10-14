@@ -32,12 +32,19 @@ defmodule Ingest.SocketHandler do
       {:nodedown, _node, _type} ->
         reply_nodes(state)
 
+      {:subscriptions, _subs} ->
+        reply_subscriptions(state)
+
       _ ->
         {:ok, state}
     end
   end
 
+  defp reply_subscriptions([subs: subs] = state) do
+    {:reply, {:text, %{subs: Ingest.SubscriptionAgent.list(subs)} |> Jason.encode!()}, state}
+  end
+
   defp reply_nodes(state) do
-    {:reply, {:text, Ingest.Monitor.Nodes.status() |> Jason.encode!()}, state}
+    {:reply, {:text, %{nodes: Ingest.Monitor.Nodes.status()} |> Jason.encode!()}, state}
   end
 end

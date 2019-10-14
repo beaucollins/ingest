@@ -5,6 +5,7 @@ defmodule Ingest.ServiceTest do
 
   test_request(Ingest.Service, [], :get, "/")
   test_request(Ingest.Service, [], :get, "/info/example.blog%2Afeed")
+  test_request(Ingest.Service, [], :get, "/nodes")
 
   test_request(Ingest.Service, [], :get, "/style.css") do
     assert conn.state == :file
