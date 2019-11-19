@@ -9,7 +9,7 @@ function Monitor({ current, nodes, readyState }) {
 			])
 		),
 		e('ul', { key: 'list' },
-			nodes.map(remote => e('li', { key: remote, className: remote === current ? 'current' : undefined }, [
+			(nodes || []).map(remote => e('li', { key: remote, className: remote === current ? 'current' : undefined }, [
 				remote
 			]))
 		)
@@ -31,6 +31,8 @@ function connect(store) {
 			const ws = new WebSocket(`${proto}//${window.location.host}/ws`);
 			store.dispatch({ type: 'READY_STATE_CHANGE', readyState: ws.readyState });
 
+			window.ws = ws;
+
 			readyState = ws.readyState;
 			ws.addEventListener('message', onMessage);
 			ws.addEventListener('close', () => {
@@ -41,7 +43,6 @@ function connect(store) {
 			ws.addEventListener('open', () => {
 				attempt = 0;
 				store.dispatch({ type: 'READY_STATE_CHANGE', readyState: ws.readyState });
-				ws.send('hello');
 			});
 		}
 		open(onMessage);
@@ -49,7 +50,21 @@ function connect(store) {
 
 	connection((event) => {
 		try {
-			store.dispatch({ type: 'NODES', ...JSON.parse(event.data).nodes })
+			const message = JSON.parse(event.data);
+			switch (message.type) {
+				case 'action': {
+					store.dispatch(message.action);
+					break;
+				}
+				case 'result': {
+					console.log('got a result', message);
+					break;
+				}
+				default: {
+					console.warn('unhandled event', message);
+					break;
+				}
+			}
 		} catch (error) {
 			console.error(error);
 		}
@@ -59,7 +74,7 @@ function connect(store) {
 const store = Redux.createStore(function (state = { readyState: -1, current: null, nodes: [] }, action) {
 	switch (action.type) {
 		case 'NODES': {
-			return { ...state, current: action.current, nodes: action.nodes };
+			return { ...state, current: action.nodes.current, nodes: action.nodes.nodes };
 		}
 		case 'READY_STATE_CHANGE': {
 			return { ...state, readyState: action.readyState };

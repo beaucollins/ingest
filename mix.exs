@@ -31,8 +31,8 @@ defmodule Ingest.MixProject do
   def application do
     [
       mod: {Ingest.Application, [env: Mix.env()]},
-      extra_applications: [:logger, :runtime_tools]
-      # included_applications: [:mnesia]
+      extra_applications: [:logger, :runtime_tools],
+      included_applications: [:mnesia]
     ]
   end
 
@@ -45,12 +45,12 @@ defmodule Ingest.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
-      {:httpoison, "~> 1.4"},
+      {:httpoison, "~> 1.6.1"},
       {:mochiweb, "~> 2.18.0"},
       {:plug_cowboy, "~> 2.0"},
       {:jason, "~> 1.1"},
       {:feedraptor, "~> 0.3.0"},
-      {:phoenix, "~> 1.4.10"},
+      {:phoenix, "~> 1.4.11"},
       {:phoenix_html, "~> 2.13.3"},
       {:libcluster, "~>3.1.0"},
       {:websockex, "~> 0.4.2"},

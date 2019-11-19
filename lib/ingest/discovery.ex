@@ -7,7 +7,6 @@ defmodule Ingest.Discovery do
   alias Ingest.Feed
   alias Traverse.Document
 
-  @spec find_feeds([String.t()]) :: [{:ok, String.t(), [Feed.T]} | {:error, String.t(), Atom.t()}]
   def find_feeds(urls) do
     Enum.map(urls, fn url ->
       Task.async(fn ->
