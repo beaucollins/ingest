@@ -30,4 +30,18 @@ defmodule Simperium.DiffMatchPatchTest do
              ]
              |> diff_to_delta()
   end
+
+  test "diff_from_delta" do
+    diffs = [
+      {:eq, "jump"},
+      {:del, "s"},
+      {:ins, "ed"},
+      {:eq, " over "},
+      {:del, "the"},
+      {:ins, "a"},
+      {:eq, " lazy"},
+      {:ins, "old dog"}
+    ] |> Enum.map(fn {op, str} -> { op, String.codepoints(str) } end)
+    assert diffs === "jumps over the lazy" |> diff_from_delta(diffs |> diff_to_delta())
+  end
 end
