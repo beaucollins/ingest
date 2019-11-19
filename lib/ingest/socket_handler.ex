@@ -95,8 +95,7 @@ defmodule Ingest.SocketHandler do
       {:ok, %{"command" => command}} when is_binary(command) ->
         {:ok, [command: command, args: []]}
 
-      {:error, reason} ->
-        IO.inspect(reason, label: "parse_command failure")
+      {:error, _reason} ->
         {:error, %{"reason" => :invalid_encoding}}
 
       _ ->
