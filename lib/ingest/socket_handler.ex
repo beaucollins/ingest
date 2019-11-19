@@ -31,8 +31,8 @@ defmodule Ingest.SocketHandler do
 
   def websocket_handle({:text, data}, state) do
     response =
-      with {:ok, [command: command, args: args]} <- parse_command(data),
-           do: run_command(command, args)
+      with {:ok, [command: command, uuid: uuid, args: args]} <- parse_command(data),
+           do: run_command(command, uuid, args)
 
     reply_command(response, state)
   end
@@ -48,8 +48,8 @@ defmodule Ingest.SocketHandler do
       {:subscriptions, _subs} ->
         reply_subscriptions(state)
 
-      {:discover, uuid, urls, feeds} ->
-        reply_discover(uuid, urls, feeds, state)
+      {:discover, uuid, url, feeds} ->
+        reply_discover(uuid, url, feeds, state)
 
       _ ->
         {:ok, state}
@@ -69,18 +69,28 @@ defmodule Ingest.SocketHandler do
 
   defp reply_command(result, state) do
     case result do
-      {:reply, response} ->
+      {:reply, uuid, response} ->
         {:reply,
-         {:text, Jason.encode!(%{"type" => "result", "result" => "ok", "response" => response})},
-         state}
+         {:text,
+          Jason.encode!(%{
+            "type" => "result",
+            "uuid" => uuid,
+            "result" => "ok",
+            "response" => response
+          })}, state}
 
-      :ok ->
-        {:ok, state}
+      {:ok, uuid} ->
+        {:reply, {:text, Jason.encode!(%{"type" => "ack", "uuid" => uuid})}, state}
 
-      {:error, reason} ->
+      {:error, uuid, reason} ->
         {:reply,
-         {:text, Jason.encode!(%{"type" => "result", "result" => "error", "response" => reason})},
-         state}
+         {:text,
+          Jason.encode!(%{
+            "type" => "result",
+            "uuid" => uuid,
+            "result" => "error",
+            "response" => reason
+          })}, state}
 
       _ ->
         {:ok, state}
@@ -89,53 +99,61 @@ defmodule Ingest.SocketHandler do
 
   defp parse_command(data) do
     case Jason.decode(data) do
+      {:ok, %{"command" => command, "uuid" => uuid, "args" => args}}
+      when is_binary(command) and is_list(args) ->
+        {:ok, [command: command, uuid: uuid, args: args]}
+
       {:ok, %{"command" => command, "args" => args}} when is_binary(command) and is_list(args) ->
-        {:ok, [command: command, args: args]}
+        {:ok, [command: command, uuid: UUID.uuid4(), args: args]}
+
+      {:ok, %{"command" => command, "uuid" => uuid}} when is_binary(command) ->
+        {:ok, [command: command, uuid: uuid, args: []]}
 
       {:ok, %{"command" => command}} when is_binary(command) ->
-        {:ok, [command: command, args: []]}
+        {:ok, [command: command, uuid: UUID.uuid4(), args: []]}
 
       {:error, _reason} ->
-        {:error, %{"reason" => :invalid_encoding}}
+        {:error, UUID.uuid4(), %{"reason" => :invalid_encoding}}
 
       _ ->
-        {:error, %{"reason" => :invalid_parameters}}
+        {:error, UUID.uuid4(), %{"reason" => :invalid_parameters}}
     end
   end
 
-  defp run_command(_command, _args \\ [])
+  defp run_command(command, uuid, args \\ [])
 
-  defp run_command("discover", urls) do
+  defp run_command("discover", uuid, urls) do
     pid = self()
 
     tasks =
       Enum.map(urls, fn url ->
-        uuid = UUID.uuid4()
-
-        {uuid,
-         Task.async(fn ->
-           feeds = Ingest.Discovery.find_feed(url)
-           send(pid, {:discover, uuid, url, feeds})
-         end)}
+        Task.async(fn ->
+          feeds = Ingest.Discovery.find_feed(url)
+          send(pid, {:discover, uuid, url, feeds})
+        end)
       end)
 
-    {:reply,
+    {:reply, uuid,
      %{
-       "tasks" => Enum.map(tasks, fn {uuid, task} -> uuid end)
+       "tasks" => Enum.map(tasks, fn task -> inspect(task.pid) end)
      }}
   end
 
-  defp run_command(command, _args) do
-    {:error, %{"reason" => :unknown_command, "command" => command}}
+  defp run_command(command, uuid, _args) do
+    {:error, uuid, %{"reason" => :unknown_command, "uuid" => uuid, "command" => command}}
   end
 
-  defp reply_discover(uuid, urls, feeds, state) do
+  defp reply_discover(uuid, url, feeds, state) do
     {:reply,
      {:text,
       Jason.encode!(%{
-        "task" => uuid,
-        "urls" => urls,
-        "feeds" => Tuple.to_list(feeds)
+        "type" => "action",
+        "action" => %{
+          "type" => "DISCOVER",
+          "uuid" => uuid,
+          "url" => url,
+          "feeds" => Tuple.to_list(feeds)
+        }
       })}, state}
   end
 end
