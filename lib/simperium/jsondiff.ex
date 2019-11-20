@@ -36,10 +36,17 @@ defmodule Simperium.JSONDiff do
 
   """
 
+  @doc """
+  Returns the diff from a successful `create_diff/2` otherwise throws.
+
+      iex> create_diff!(%{}, %{"a" => 1})
+      %{"a" => %{"o" => "+", "v" => 1}}
+
+  """
   def create_diff!(source, target) do
     case create_diff(source, target) do
       {:ok, diff} -> diff
-      error -> throw(error)
+      _ -> raise Simperium.JSONDiff.InvalidDiffError
     end
   end
 
@@ -164,11 +171,19 @@ defmodule Simperium.JSONDiff do
   end
 
   @doc """
-  Throwable api for `apply_diff`.
+  Returns result of applying patch to source otherwise throws.
+
+      iex> apply_diff!(%{"a" => %{"o" => "-"}}, %{"a" => "hello"})
+      %{}
+
+      iex> apply_diff!(%{"a" => %{"o" => "?"}}, %{})
+      ** (Simperium.JSONDiff.InvalidPatchError) Invalid patch
+
+  See `apply_diff/2`
   """
   def apply_diff!(patch, source) do
     case apply_diff(patch, source) do
-      {:error, reason} -> throw({:error, reason})
+      {:error, _} -> raise Simperium.JSONDiff.InvalidPatchError
       {:ok, result} -> result
     end
   end
@@ -379,4 +394,12 @@ defmodule Simperium.JSONDiff do
     end)
     |> Enum.reduce(0, fn i, _ -> i end)
   end
+end
+
+defmodule Simperium.JSONDiff.InvalidDiffError do
+  defexception message: "Invalid diff"
+end
+
+defmodule Simperium.JSONDiff.InvalidPatchError do
+  defexception message: "Invalid patch"
 end
