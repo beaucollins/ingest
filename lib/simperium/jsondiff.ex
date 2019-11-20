@@ -342,7 +342,7 @@ defmodule Simperium.JSONDiff do
   end
 
   def apply_diff(patch, source) when is_binary(patch) and is_binary(source) do
-    {:ok, Simperium.DiffMatchPatch.apply_diff_from_delta(source, patch)}
+    Simperium.DiffMatchPatch.apply_diff_from_delta(source, patch)
   end
 
   def apply_diff(patch, source) do

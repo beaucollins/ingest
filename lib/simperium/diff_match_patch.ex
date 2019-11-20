@@ -81,16 +81,17 @@ defmodule Simperium.DiffMatchPatch do
   new text.
 
       iex> apply_diff_from_delta("hello world", "=6\t-5\t+kansas")
-      "hello kansas"
+      {:ok, "hello kansas"}
   """
   def apply_diff_from_delta(source, delta) do
-    reduce_delta(source, delta, "", fn op, output ->
-      case op do
-        {:ins, chars} -> output <> to_string(chars)
-        {:eq, chars} -> output <> to_string(chars)
-        {:del, _} -> output
-      end
-    end)
+    {:ok,
+     reduce_delta(source, delta, "", fn op, output ->
+       case op do
+         {:ins, chars} -> output <> to_string(chars)
+         {:eq, chars} -> output <> to_string(chars)
+         {:del, _} -> output
+       end
+     end)}
   end
 
   defp token_as_operation(token) do
