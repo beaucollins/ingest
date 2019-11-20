@@ -1,25 +1,51 @@
 defmodule Simperium.JSONDiff do
+  @moduledoc """
+  Create, apply, and transform JSONDiff constructs.
+
+  What is a JSONDiff? I recipe for transforming one JSON compatible
+  source datastructure into a desired result. It is the delta between
+  two JSON objects.
+
+  Example. Given JSON of `{"note": "hello"}` and `{"note": "hello world"}`
+  the delta in plain English could be described as:
+
+  > Append the string `" world"` to the value at key `"note"`.
+
+  In JSONDiff that looks like:
+
+  ```json
+  {"note": { "o": "d", "v": "=5+ world"}}
+  ```
+
+  To compute this diff using `Jason` as our encoder/decoder:
+
+      iex> Jason.decode!(~s({"note": "hello"}))
+      ...> |> create_diff(Jason.decode!(~s({"note": "hello world"})))
+      ...> |> Jason.encode!()
+      ~s({"note":{"o":"d","v":"=5\\\\t+ world"}})
+
+  """
   @doc """
-  Produce the diff of two objects.
+  Produce the delta describing the changes to make `source` into `target`.
 
   Keys present in `source` but absent in `target` are removed:
 
-      iex> diff(%{"x" => 1}, %{})
+      iex> create_diff(%{"x" => 1}, %{})
       %{"x" => %{"o" => "-"}}
 
   Keys absent in `source` but present in `target` are added:
 
-      iex> diff(%{}, %{"b" => 2})
+      iex> create_diff(%{}, %{"b" => 2})
       %{"b" => %{"o" => "+", "v" => 2}}
 
   Keys present in both `source` and `target` both are diffed:
 
-      iex> diff(%{"a" => 1}, %{"a" => 2})
+      iex> create_diff(%{"a" => 1}, %{"a" => 2})
       %{"a" => %{"o" => "r", "v" => 2}}
 
   Lists are reduced to change operations:
 
-      iex> diff(%{"a" => [1, true, "b", "c"]}, %{"a" => [1, false, "bd", "c"]})
+      iex> create_diff(%{"a" => [1, true, "b", "c"]}, %{"a" => [1, false, "bd", "c"]})
       %{
         "a" => %{
           "o" => "L",
@@ -32,27 +58,27 @@ defmodule Simperium.JSONDiff do
 
   String values use diff-match-patch:
 
-      iex> diff(%{"a" => "hello world"}, %{"a" => "good bye"})
+      iex> create_diff(%{"a" => "hello world"}, %{"a" => "good bye"})
       %{"a" => %{"o" => "d", "v" => "-4\t+g\t=1\t-2\t=1\t-2\t=1\t+ bye"}}
 
 
   Equal objects return empty diffs:
 
-      iex> diff(%{"a" => "b"}, %{"a" => "b"})
+      iex> create_diff(%{"a" => "b"}, %{"a" => "b"})
       %{}
 
   """
 
-  def diff(source, target) when source == target do
+  def create_diff(source, target) when source == target do
     %{}
   end
 
-  def diff(source, target) when is_binary(source) and is_binary(target) do
+  def create_diff(source, target) when is_binary(source) and is_binary(target) do
     Simperium.DiffMatchPatch.diff_main(source, target)
     |> Simperium.DiffMatchPatch.diff_to_delta()
   end
 
-  def diff(source, target) when is_map(source) and is_map(target) do
+  def create_diff(source, target) when is_map(source) and is_map(target) do
     keys_source = Map.keys(source) |> MapSet.new()
     keys_target = Map.keys(target) |> MapSet.new()
 
@@ -82,7 +108,7 @@ defmodule Simperium.JSONDiff do
     diffs
   end
 
-  def diff(source, target) when is_list(source) and is_list(target) do
+  def create_diff(source, target) when is_list(source) and is_list(target) do
     {prefix, source_slice, target_slice} = compare_lists(source, target)
 
     Stream.zip(
@@ -274,16 +300,16 @@ defmodule Simperium.JSONDiff do
 
   defp diff_key_operation(source, target)
        when is_map(source) and is_map(target) do
-    {"O", diff(source, target)}
+    {"O", create_diff(source, target)}
   end
 
   defp diff_key_operation(source, target)
        when is_list(source) and is_list(target) do
-    {"L", diff(source, target)}
+    {"L", create_diff(source, target)}
   end
 
   defp diff_key_operation(source, target) when is_binary(source) and is_binary(target) do
-    {"d", diff(source, target)}
+    {"d", create_diff(source, target)}
   end
 
   # Not equal, not containers, just replace

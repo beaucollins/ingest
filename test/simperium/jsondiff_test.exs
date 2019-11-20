@@ -6,7 +6,7 @@ defmodule Simperium.JSONDiffTest do
 
   describe "diff" do
     test "empty maps" do
-      assert %{} == diff(%{}, %{})
+      assert %{} == create_diff(%{}, %{})
     end
 
     test "replace non-string, non-container values" do
@@ -14,7 +14,7 @@ defmodule Simperium.JSONDiffTest do
                "A" => %{"o" => "r", "v" => 2},
                "B" => %{"o" => "r", "v" => false}
              } ==
-               diff(
+               create_diff(
                  %{
                    "A" => 1,
                    "B" => true
@@ -30,8 +30,8 @@ defmodule Simperium.JSONDiffTest do
       source = %{"a" => false, "b" => 1}
       target = %{"b" => 2, "c" => true}
 
-      assert %{"a" => %{"o" => "O", "v" => diff(source, target)}} ==
-               diff(
+      assert %{"a" => %{"o" => "O", "v" => create_diff(source, target)}} ==
+               create_diff(
                  %{"a" => source},
                  %{"a" => target}
                )
@@ -41,21 +41,21 @@ defmodule Simperium.JSONDiffTest do
       source = [1, 2]
       target = [1, 3]
 
-      assert %{1 => %{"o" => "r", "v" => 3}} = diff(source, target)
+      assert %{1 => %{"o" => "r", "v" => 3}} = create_diff(source, target)
     end
 
     test "diff lists common prefix and suffix" do
       source = [1, 3, 4, 5]
       target = [1, 2, 3, 4, 5]
 
-      assert %{1 => %{"o" => "+", "v" => 2}} = diff(source, target)
+      assert %{1 => %{"o" => "+", "v" => 2}} = create_diff(source, target)
     end
 
     test "diff lists no prefix" do
       source = [3, 4, 5]
       target = [2, 3, 4, 5]
 
-      assert %{0 => %{"o" => "+", "v" => 2}} = diff(source, target)
+      assert %{0 => %{"o" => "+", "v" => 2}} = create_diff(source, target)
     end
   end
 
