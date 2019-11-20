@@ -14,39 +14,57 @@ defmodule Simperium.JSONDiff do
   In JSONDiff that looks like:
 
   ```json
-  {"note": { "o": "d", "v": "=5+ world"}}
+  {"note": { "o": "d", "v": "=5\t+ world"}}
   ```
 
   To compute this diff using `Jason` as our encoder/decoder:
 
-      iex> Jason.decode!(~s({"note": "hello"}))
-      ...> |> create_diff(Jason.decode!(~s({"note": "hello world"})))
+      iex> ~s({"note": "hello"})
+      ...> |> Jason.decode!()
+      ...> |> create_diff!(Jason.decode!(~s({"note": "hello world"})))
       ...> |> Jason.encode!()
       ~s({"note":{"o":"d","v":"=5\\\\t+ world"}})
 
+  The output of `create_diff` can be used with the `source` and `apply_diff`
+  to transform at JSON of the same value of `source` to the desired `target`.
+
+      iex> ~s({"note":{"o":"d","v":"=5\\\\t+ world"}})
+      ...> |> Jason.decode!()
+      ...> |> apply_diff!(Jason.decode!(~s({"note": "hello"})))
+      ...> |> Jason.encode!()
+      ~s({"note":"hello world"})
+
   """
+
+  def create_diff!(source, target) do
+    case create_diff(source, target) do
+      {:ok, diff} -> diff
+      error -> throw(error)
+    end
+  end
+
   @doc """
   Produce the delta describing the changes to make `source` into `target`.
 
   Keys present in `source` but absent in `target` are removed:
 
       iex> create_diff(%{"x" => 1}, %{})
-      %{"x" => %{"o" => "-"}}
+      {:ok, %{"x" => %{"o" => "-"}}}
 
   Keys absent in `source` but present in `target` are added:
 
       iex> create_diff(%{}, %{"b" => 2})
-      %{"b" => %{"o" => "+", "v" => 2}}
+      {:ok, %{"b" => %{"o" => "+", "v" => 2}}}
 
   Keys present in both `source` and `target` both are diffed:
 
       iex> create_diff(%{"a" => 1}, %{"a" => 2})
-      %{"a" => %{"o" => "r", "v" => 2}}
+      {:ok, %{"a" => %{"o" => "r", "v" => 2}}}
 
   Lists are reduced to change operations:
 
       iex> create_diff(%{"a" => [1, true, "b", "c"]}, %{"a" => [1, false, "bd", "c"]})
-      %{
+      {:ok, %{
         "a" => %{
           "o" => "L",
           "v" => %{
@@ -54,28 +72,29 @@ defmodule Simperium.JSONDiff do
             2 => %{ "o" => "d", "v" => "=1\t+d"}
           }
         }
-      }
+      }}
 
   String values use diff-match-patch:
 
       iex> create_diff(%{"a" => "hello world"}, %{"a" => "good bye"})
-      %{"a" => %{"o" => "d", "v" => "-4\t+g\t=1\t-2\t=1\t-2\t=1\t+ bye"}}
+      {:ok, %{"a" => %{"o" => "d", "v" => "-4\t+g\t=1\t-2\t=1\t-2\t=1\t+ bye"}}}
 
 
   Equal objects return empty diffs:
 
       iex> create_diff(%{"a" => "b"}, %{"a" => "b"})
-      %{}
+      {:ok, %{}}
 
   """
 
   def create_diff(source, target) when source == target do
-    %{}
+    {:ok, %{}}
   end
 
   def create_diff(source, target) when is_binary(source) and is_binary(target) do
-    Simperium.DiffMatchPatch.diff_main(source, target)
-    |> Simperium.DiffMatchPatch.diff_to_delta()
+    {:ok,
+     Simperium.DiffMatchPatch.diff_main(source, target)
+     |> Simperium.DiffMatchPatch.diff_to_delta()}
   end
 
   def create_diff(source, target) when is_map(source) and is_map(target) do
@@ -99,40 +118,59 @@ defmodule Simperium.JSONDiff do
     diffs =
       Enum.reduce(keys_replaced, diffs, fn key, diffs ->
         case diff_key_operation(Map.get(source, key), Map.get(target, key)) do
-          {operation, value} -> Map.put(diffs, key, %{"o" => operation, "v" => value})
-          := -> diffs
-          _ -> diffs
+          {:ok, {operation, value}} -> Map.put(diffs, key, %{"o" => operation, "v" => value})
+          {:ok, :=} -> diffs
+          {:ok, _} -> diffs
+          error = {:error, _} -> error
         end
       end)
 
-    diffs
+    {:ok, diffs}
   end
 
   def create_diff(source, target) when is_list(source) and is_list(target) do
     {prefix, source_slice, target_slice} = compare_lists(source, target)
 
-    Stream.zip(
-      Stream.concat(source_slice, Stream.cycle([:halt])),
-      Stream.concat(target_slice, Stream.cycle([:halt]))
-    )
-    |> Stream.transform(nil, fn
-      {:halt, :halt}, acc -> {:halt, acc}
-      pair, acc -> {[pair], acc}
-    end)
-    |> Enum.with_index()
-    |> Enum.reduce(%{}, fn {{source, target}, index}, diffs ->
-      case {source, target} do
-        {:halt, _} -> {"+", target}
-        {_, :halt} -> "-"
-        {source, target} when source == target -> :=
-        _ -> diff_key_operation(source, target)
-      end
-      |> case do
-        := -> diffs
-        "-" -> Map.put(diffs, index + prefix, %{"o" => "-"})
-        {operation, value} -> Map.put(diffs, index + prefix, %{"o" => operation, "v" => value})
-      end
-    end)
+    diff =
+      Stream.zip(
+        Stream.concat(source_slice, Stream.cycle([:halt])),
+        Stream.concat(target_slice, Stream.cycle([:halt]))
+      )
+      |> Stream.transform(nil, fn
+        {:halt, :halt}, acc -> {:halt, acc}
+        pair, acc -> {[pair], acc}
+      end)
+      |> Enum.with_index()
+      |> Enum.reduce(%{}, fn {{source, target}, index}, diffs ->
+        case {source, target} do
+          {:halt, _} -> {:ok, {"+", target}}
+          {_, :halt} -> {:ok, "-"}
+          {source, target} when source == target -> {:ok, :=}
+          _ -> diff_key_operation(source, target)
+        end
+        |> case do
+          {:ok, :=} ->
+            diffs
+
+          {:ok, "-"} ->
+            Map.put(diffs, index + prefix, %{"o" => "-"})
+
+          {:ok, {operation, value}} ->
+            Map.put(diffs, index + prefix, %{"o" => operation, "v" => value})
+        end
+      end)
+
+    {:ok, diff}
+  end
+
+  @doc """
+  Throwable api for `apply_diff`.
+  """
+  def apply_diff!(patch, source) do
+    case apply_diff(patch, source) do
+      {:error, reason} -> throw({:error, reason})
+      {:ok, result} -> result
+    end
   end
 
   @doc """
@@ -292,29 +330,32 @@ defmodule Simperium.JSONDiff do
     {:ok, Simperium.DiffMatchPatch.apply_diff_from_delta(source, patch)}
   end
 
-  def apply_diff(_patch, _source) do
-    {:error, :invalid_diff}
+  def apply_diff(patch, source) do
+    {:error, :invalid_diff, patch, source}
   end
 
-  defp diff_key_operation(source, target) when source == target, do: :=
+  defp diff_key_operation(source, target) when source == target, do: {:ok, :=}
 
   defp diff_key_operation(source, target)
        when is_map(source) and is_map(target) do
-    {"O", create_diff(source, target)}
+    with {:ok, diff} <- create_diff(source, target),
+         do: {:ok, {"O", diff}}
   end
 
   defp diff_key_operation(source, target)
        when is_list(source) and is_list(target) do
-    {"L", create_diff(source, target)}
+    with {:ok, diff} <- create_diff(source, target),
+         do: {:ok, {"L", diff}}
   end
 
   defp diff_key_operation(source, target) when is_binary(source) and is_binary(target) do
-    {"d", create_diff(source, target)}
+    with {:ok, diff} <- create_diff(source, target),
+         do: {:ok, {"d", diff}}
   end
 
   # Not equal, not containers, just replace
   defp diff_key_operation(_source, target) do
-    {"r", target}
+    {:ok, {"r", target}}
   end
 
   defp compare_lists(source, target) do
