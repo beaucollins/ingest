@@ -83,9 +83,11 @@ defmodule Simperium.JSONDiff do
   end
 
   def diff(source, target) when is_list(source) and is_list(target) do
+    {prefix, source_slice, target_slice} = compare_lists(source, target)
+
     Stream.zip(
-      Stream.concat(source, Stream.cycle([:halt])),
-      Stream.concat(target, Stream.cycle([:halt]))
+      Stream.concat(source_slice, Stream.cycle([:halt])),
+      Stream.concat(target_slice, Stream.cycle([:halt]))
     )
     |> Stream.transform(nil, fn
       {:halt, :halt}, acc -> {:halt, acc}
@@ -101,10 +103,118 @@ defmodule Simperium.JSONDiff do
       end
       |> case do
         := -> diffs
-        "-" -> Map.put(diffs, index, %{"o" => "-"})
-        {operation, value} -> Map.put(diffs, index, %{"o" => operation, "v" => value})
+        "-" -> Map.put(diffs, index + prefix, %{"o" => "-"})
+        {operation, value} -> Map.put(diffs, index + prefix, %{"o" => operation, "v" => value})
       end
     end)
+  end
+
+  @doc """
+  Given a `patch` (see `diff/2`) and a `source` object, produces the new
+  state of the object with the patch applied.
+
+  Add a key/value pair to a `Map`:
+
+      iex> %{"a" => %{"o" => "+", "v" => 1}}
+      ...> |> apply_diff(%{"b" => 2})
+      {:ok, %{"a" => 1, "b" => 2}}
+
+  Remove a key/value pair to a `Map`:
+
+      iex> %{"a" => %{"o" => "-"}}
+      ...> |> apply_diff(%{"a" => 1, "b" => 2})
+      {:ok, %{"b" => 2}}
+
+  Replace a key/value pair in a `Map`:
+
+      iex> %{"a" => %{"o" => "r", "v" => "abc"}}
+      ...> |> apply_diff(%{"a" => 123})
+      {:ok, %{"a" => "abc"}}
+
+  Apply diff to key value in a `Map`:
+
+      iex> %{"a" => %{"o" => "d", "v" => "-5\t+goodbye\t=6"}}
+      ...> |> apply_diff(%{"a" => "hello world"})
+      {:ok, %{"a" => "goodbye world"}}
+
+  Recursively apply diff to `Map` at key:
+
+      iex> %{"a" => %{"o" => "O", "v" => %{
+      ...>   "thing" => %{ "o" => "d", "v" => "=6\t-5\t+new york" }
+      ...> }}}
+      ...> |> apply_diff(%{"a" => %{"thing" => "hello world"}})
+      {:ok, %{"a" => %{"thing" => "hello new york"}}}
+  """
+  def apply_diff(patch, source)
+
+  def apply_diff(patch, source) when is_map(source) and is_map(patch) do
+    Enum.reduce(patch, {:ok, source}, fn
+      _op, res = {:error, _reason} ->
+        res
+
+      {key, %{"o" => "+", "v" => value}}, {:ok, target} ->
+        case Map.has_key?(source, key) do
+          false -> {:ok, Map.put(target, key, value)}
+          true -> {:error, {:key_exists, key}}
+        end
+
+      {key, %{"o" => "-"}}, {:ok, target} ->
+        case Map.has_key?(source, key) do
+          true -> {:ok, Map.delete(target, key)}
+          false -> {:error, {:key_missing, key}}
+        end
+
+      {key, %{"o" => "r", "v" => value}}, {:ok, target} ->
+        case Map.has_key?(source, key) do
+          true -> {:ok, Map.put(target, key, value)}
+          false -> {:error, {:key_missing, key}}
+        end
+
+      {key, %{"o" => "d", "v" => value}}, {:ok, target} ->
+        case Map.get(source, key) do
+          original when is_binary(original) ->
+            {:ok,
+             Map.put(target, key, Simperium.DiffMatchPatch.apply_diff_from_delta(original, value))}
+
+          _ ->
+            {:error, {:invalid_source, key}}
+        end
+
+      {key, %{"o" => "O", "v" => object_diff}}, {:ok, target} ->
+        case(apply_diff(object_diff, Map.get(source, key))) do
+          {:ok, updated} -> {:ok, Map.put(target, key, updated)}
+          result -> result
+        end
+
+      {key, %{"o" => "L", "v" => list_diff}}, {:ok, target} ->
+        case apply_diff(list_diff, Map.get(source, key)) do
+          {:ok, updated} -> {:ok, Map.put(target, key, updated)}
+          result -> result
+        end
+
+      {key, %{"o" => operation}}, {:ok, _target} ->
+        {:error, {:unknown_operation, operation, key}}
+
+      {key, value}, {:ok, _target} ->
+        {:error, {:invalid_operation, value, key}}
+    end)
+  end
+
+  def apply_diff(patch, source) when is_list(source) and is_map(patch) do
+    Enum.reduce(patch, {:ok, source}, fn
+      _key_value, error = {:error, _reason} ->
+        error
+
+      {key, %{"o" => "+", "v" => value}}, {:ok, target} ->
+        {:ok, List.insert_at(target, key, value)}
+
+      _, _ ->
+        {:error, :not_implemented}
+    end)
+  end
+
+  def apply_diff(_patch, _source) do
+    {:error, :invalid_diff}
   end
 
   defp diff_key_operation(source, target) when source == target, do: :=
@@ -126,5 +236,27 @@ defmodule Simperium.JSONDiff do
   # Not equal, not containers, just replace
   defp diff_key_operation(_source, target) do
     {"r", target}
+  end
+
+  defp compare_lists(source, target) do
+    prefix = compare_lists_prefix(source, target)
+
+    suffix = compare_lists_prefix(Enum.reverse(source), Enum.reverse(target))
+
+    slice = prefix..-(suffix + 1)
+
+    {prefix, Enum.slice(source, slice), Enum.slice(target, slice)}
+  end
+
+  defp compare_lists_prefix(source, target) do
+    Stream.zip(source, target)
+    |> Stream.transform(0, fn
+      {source, target}, acc when source != target ->
+        {:halt, acc}
+
+      {source, target}, acc when source == target ->
+        {[acc + 1], acc + 1}
+    end)
+    |> Enum.reduce(0, fn i, _ -> i end)
   end
 end
