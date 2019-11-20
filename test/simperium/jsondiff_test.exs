@@ -96,5 +96,62 @@ defmodule Simperium.JSONDiffTest do
 
       assert {:ok, b} == apply_diff(patch, a)
     end
+
+    test "apply list diff" do
+      a = [1, "a", 3]
+      b = [1, "ab", 2, 3]
+
+      patch = %{
+        1 => %{"o" => "d", "v" => "=1\t+b"},
+        2 => %{"o" => "+", "v" => 2}
+      }
+
+      assert {:ok, b} == apply_diff(patch, a)
+    end
+
+    test "apply list replace" do
+      a = [1, 1, 0, 3]
+      b = [1, 2, 3]
+
+      patch = %{
+        1 => %{"o" => "r", "v" => 2},
+        2 => %{"o" => "-"}
+      }
+
+      assert {:ok, b} == apply_diff(patch, a)
+    end
+
+    test "apply list diff with objec diff" do
+      a = [%{}]
+      b = [%{"a" => "b"}]
+
+      patch = %{
+        0 => %{
+          "o" => "O",
+          "v" => %{
+            "a" => %{"o" => "+", "v" => "b"}
+          }
+        }
+      }
+
+      assert {:ok, b} == apply_diff(patch, a)
+    end
+
+    test "apply list diff with list diff" do
+      a = [1, [1, 2], 3]
+      b = [1, [], 3]
+
+      patch = %{
+        1 => %{
+          "o" => "L",
+          "v" => %{
+            0 => %{"o" => "-"},
+            1 => %{"o" => "-"}
+          }
+        }
+      }
+
+      assert {:ok, b} == apply_diff(patch, a)
+    end
   end
 end

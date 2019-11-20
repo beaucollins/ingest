@@ -173,8 +173,9 @@ defmodule Simperium.JSONDiff do
       {key, %{"o" => "d", "v" => value}}, {:ok, target} ->
         case Map.get(source, key) do
           original when is_binary(original) ->
-            {:ok,
-             Map.put(target, key, Simperium.DiffMatchPatch.apply_diff_from_delta(original, value))}
+            case apply_diff(value, original) do
+              {:ok, updated} -> {:ok, Map.put(target, key, updated)}
+            end
 
           _ ->
             {:error, {:invalid_source, key}}
@@ -201,16 +202,68 @@ defmodule Simperium.JSONDiff do
   end
 
   def apply_diff(patch, source) when is_list(source) and is_map(patch) do
-    Enum.reduce(patch, {:ok, source}, fn
+    Enum.reduce(patch, {:ok, source, 0}, fn
       _key_value, error = {:error, _reason} ->
         error
 
-      {key, %{"o" => "+", "v" => value}}, {:ok, target} ->
-        {:ok, List.insert_at(target, key, value)}
+      {key, %{"o" => "-"}}, {:ok, target, removals} ->
+        {:ok, List.delete_at(target, key - removals), removals + 1}
 
-      _, _ ->
-        {:error, :not_implemented}
+      {key, %{"o" => "+", "v" => value}}, {:ok, target, removals} ->
+        {:ok, List.insert_at(target, key - removals, value), removals}
+
+      {key, %{"o" => "r", "v" => value}}, {:ok, target, removals} ->
+        {:ok, List.replace_at(target, key - removals, value), removals}
+
+      {key, %{"o" => "d", "v" => patch}}, {:ok, target, removals} ->
+        case Enum.fetch(source, key) do
+          {:ok, current} ->
+            case apply_diff(patch, current) do
+              {:ok, updated} -> {:ok, List.replace_at(target, key - removals, updated), removals}
+            end
+
+          :error ->
+            {:error, :invalid_patch, key}
+        end
+
+      {key, %{"o" => "L", "v" => patch}}, {:ok, target, removals} ->
+        case Enum.fetch(source, key) do
+          {:ok, current} ->
+            case apply_diff(patch, current) do
+              {:ok, list} -> {:ok, List.replace_at(target, key - removals, list), removals}
+              {:error, reason} -> {:error, {:invalid_patch, key, reason}}
+            end
+
+          :error ->
+            {:error, {:invalid_patch, key}}
+        end
+
+      {key, %{"o" => "O", "v" => patch}}, {:ok, target, removals} ->
+        case Enum.fetch(source, key) do
+          {:ok, current} ->
+            case apply_diff(patch, current) do
+              {:ok, updated} -> {:ok, List.replace_at(target, key + removals, updated), removals}
+              {:error, reason} -> {:error, {:invalid_patch, key, reason}}
+            end
+
+          :error ->
+            {:error, {:invalid_patch, key}}
+        end
+
+      {key, %{"o" => operation}}, {:ok, _target, _removals} ->
+        {:error, {:unknown_operation, operation, key}}
+
+      {key, patch}, {:ok, _target, _removals} ->
+        {:error, {:invalid_diff, key, patch}}
     end)
+    |> case do
+      error = {:error, _reason} -> error
+      {:ok, result, _removed} -> {:ok, result}
+    end
+  end
+
+  def apply_diff(patch, source) when is_binary(patch) and is_binary(source) do
+    {:ok, Simperium.DiffMatchPatch.apply_diff_from_delta(source, patch)}
   end
 
   def apply_diff(_patch, _source) do
