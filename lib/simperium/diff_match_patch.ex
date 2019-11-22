@@ -9,12 +9,12 @@ defmodule Simperium.DiffMatchPatch do
   Produces the `myers_difference` operations of two strings.
 
       iex> diff_main( "abc", "abbc")
-      [{:eq, ["a", "b"]}, {:ins, ["b"]}, {:eq, ["c"]}]
+      [{:eq, "ab"}, {:ins, "b"}, {:eq, "c"}]
 
   See `List.myers_difference/3`.
   """
   def diff_main(text1, text2) do
-    List.myers_difference(String.graphemes(text1), String.graphemes(text2))
+    String.myers_difference(text1, text2)
   end
 
   @doc """
@@ -47,10 +47,10 @@ defmodule Simperium.DiffMatchPatch do
         end <>
         case op do
           {:eq, chars} ->
-            "=" <> (length(chars) |> to_string())
+            "=" <> (chars |> String.length() |> to_string())
 
           {:del, chars} ->
-            "-" <> (length(chars) |> to_string())
+            "-" <> (chars |> String.length() |> to_string())
 
           {:ins, chars} ->
             "+" <> (chars |> to_string() |> URI.encode() |> String.replace("%20", " "))
@@ -64,9 +64,9 @@ defmodule Simperium.DiffMatchPatch do
 
       iex> diff_from_delta("goodbye", "-2\t=5\t+hello")
       [
-        {:del, ["g", "o"]},
-        {:eq, ["o", "d", "b", "y", "e"]},
-        {:ins, ["h", "e", "l", "l", "o"]}
+        {:del, "go"},
+        {:eq, "odbye"},
+        {:ins, "hello"}
       ]
   """
   def diff_from_delta(source, delta) do
@@ -114,14 +114,14 @@ defmodule Simperium.DiffMatchPatch do
         case op do
           {:-, count} ->
             {String.slice(source, count..-1),
-             fun.({:del, String.slice(source, 0..(count - 1)) |> String.graphemes()}, output)}
+             fun.({:del, String.slice(source, 0..(count - 1))}, output)}
 
           {:=, count} ->
             {String.slice(source, count..-1),
-             fun.({:eq, String.slice(source, 0..(count - 1)) |> String.graphemes()}, output)}
+             fun.({:eq, String.slice(source, 0..(count - 1))}, output)}
 
           {:+, chars} ->
-            {source, fun.({:ins, chars |> String.graphemes()}, output)}
+            {source, fun.({:ins, chars}, output)}
         end
       end)
 

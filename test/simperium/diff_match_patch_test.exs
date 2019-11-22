@@ -6,11 +6,11 @@ defmodule Simperium.DiffMatchPatchTest do
 
 
   test "diff_main" do
-    assert  [eq: ["a", "b"], del: ["c"], ins: ["d"], eq: ["e", "f"]] == diff_main("abcef", "abdef") |> diff_cleanup_efficiency()
+    assert [eq: "ab", del: "c", ins: "d", eq: "ef"] == diff_main("abcef", "abdef") |> diff_cleanup_efficiency()
   end
 
   test "diff_main unicode points" do
-    assert [eq: ["a"], del: ["🖖🏿"], ins: ["🖖"], eq: ["c"]] == diff_main("a🖖🏿c", "a🖖c")
+    assert [eq: "a", del: "🖖🏿", ins: "🖖", eq: "c"] == diff_main("a🖖🏿c", "a🖖c")
   end
 
   test "diff_to_delta" do
@@ -24,9 +24,9 @@ defmodule Simperium.DiffMatchPatchTest do
   test "deltas with special characters" do
     assert "=5\t-5\t+%DA%82 %5C %7C" ==
              [
-               {:eq, String.codepoints("\u0680 \t %")},
-               {:del, String.codepoints("\u0681 \n ^")},
-               {:ins, String.codepoints("\u0682 \\ |")}
+               {:eq, "\u0680 \t %"},
+               {:del, "\u0681 \n ^"},
+               {:ins, "\u0682 \\ |"}
              ]
              |> diff_to_delta()
   end
@@ -41,7 +41,7 @@ defmodule Simperium.DiffMatchPatchTest do
       {:ins, "a"},
       {:eq, " lazy"},
       {:ins, "old dog"}
-    ] |> Enum.map(fn {op, str} -> { op, String.codepoints(str) } end)
+    ]
     assert diffs === "jumps over the lazy" |> diff_from_delta(diffs |> diff_to_delta())
   end
 end
