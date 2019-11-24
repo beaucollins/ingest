@@ -1,9 +1,11 @@
 defmodule Simperium.DiffMatchPatch do
   @moduledoc """
-  DiffMatchPatch compatible operations needed to perform JSONDiff sync operations.
+  [DiffMatchPatch][:dmp] compatible operations needed to perform `Simperium.JSONDiff` sync operations.
 
   This is not a complete implementation of the `diff-match-patch` API. Not all functions
   are needed to implement JSONDiff.
+
+  [:dmp]: https://github.com/google/diff-match-patch
   """
   @doc """
   Produces the `myers_difference` operations of two strings.
@@ -53,7 +55,7 @@ defmodule Simperium.DiffMatchPatch do
             "-" <> (chars |> String.length() |> to_string())
 
           {:ins, chars} ->
-            "+" <> (chars |> to_string() |> URI.encode() |> String.replace("%20", " "))
+            "+" <> (chars |> URI.encode() |> String.replace("%20", " "))
         end
     end)
   end
