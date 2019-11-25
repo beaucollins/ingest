@@ -19,7 +19,8 @@ defmodule Ingest.MixProject do
         extras: [
           "README.md",
           "docs/hello.md"
-        ]
+        ],
+        source_ref: "simperium"
       ]
     ]
   end
