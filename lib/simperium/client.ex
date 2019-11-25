@@ -1,7 +1,53 @@
 defmodule Simperium.Client do
   @moduledoc """
-  Process that implements realtime syncing with Simperium.com for a single
+  Process that implements real-time syncing with Simperium.com for a single
   Simperium App ID.
+
+  Currently it's all setup for debugging with noisy logging and debug traces.
+
+     iex> {:ok, client} = Simperium.start_link "funny-nerfherder-g809"
+     ...> {:ok, bucket } = Simperium.create_bucket client, "note", "super-secure-token"
+
+  You will now see the messages between the `Simperium.Connection` and the Simperium
+  real-time syncing service.
+
+  ```
+  <=: {:bucket, 0,
+    %Simperium.Message.AuthenticationSuccess{identity: "REDACTED"}}
+  <=: {:connection, %Simperium.Message.Heartbeat{count: 16}}
+  <=: {:connection, %Simperium.Message.Heartbeat{count: 18}}
+  <=: {:connection, %Simperium.Message.Heartbeat{count: 20}}
+  ```
+
+  Make a changes on another client:
+
+  ```
+  <=: {:bucket, 0,
+    %Simperium.Message.RemoteChanges{
+    changes: [
+      %Simperium.RemoteChange{
+        ccids: ["a6386cc4-81db-4f24-a2c0-acdb47f28bfe"],
+        clientid: "node-3a3c39e2-4cd7-48e0-a487-2b358b29039f",
+        cv: "5ddbfef94806f90fe648e8ec",
+        ev: 10,
+        id: "1a2d1cfe7cba46c3a8b5f1b3797643d8",
+        o: "M",
+        sv: 9,
+        v: %{
+          "content" => %{"o" => "d", "v" => "=27\t+%0A%0Aadding something"},
+          "modificationDate" => %{"o" => "r", "v" => 1574698743}
+        }
+      }
+    ]
+    }}
+  ```
+
+  All messages understood by `Simperium.Client` are defined as structs in
+  the `Simperium.Message` module.
+
+  **TODO**: Seperate/identify incoming vs outgoing messages. `Simperium.Message.parse/1`
+  turns incoming Websocket frames into messages. Implementing `Simperium.MessageEncoder` for a
+  message means it is an outgoing message understood by `Simperium.Message.encode/1`.
   """
   @doc """
   Specification for starting a Simperium sync client.
