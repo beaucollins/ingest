@@ -5,8 +5,8 @@ defmodule Simperium.Client do
 
   Currently it's all setup for debugging with noisy logging and debug traces.
 
-     iex> {:ok, client} = Simperium.start_link "funny-nerfherder-g809"
-     ...> {:ok, bucket } = Simperium.create_bucket client, "note", "super-secure-token"
+      iex> {:ok, client} = Simperium.start_link "funny-nerfherder-g809"
+      ...> {:ok, bucket } = Simperium.create_bucket client, "note", "super-secure-token"
 
   You will now see the messages between the `Simperium.Connection` and the Simperium
   real-time syncing service.
