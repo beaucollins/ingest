@@ -34,45 +34,16 @@ defimpl Simperium.MessageEncoder, for: Simperium.Message.ObjectVersion do
   end
 end
 
-defimpl Simperium.MessageEncoder, for: Simperium.Message.IndexRequest do
-  def encode(%Simperium.Message.IndexRequest{
-        include_data?: include_data?,
-        limit: limit,
-        mark: mark,
-        offset: offset
-      }) do
-    "i:" <>
-      ([
-         if include_data? === true do
-           1
-         else
-           nil
-         end,
-         mark,
-         offset,
-         limit
-       ]
-       |> Enum.join(":"))
-  end
-end
-
-defimpl Simperium.MessageEncoder, for: Simperium.Message.ChangeRequest do
-  def encode(change = %Simperium.Message.ChangeRequest{}) do
-    keys = [:clientid, :cv, :ev, :id, :o, :ccid]
-
-    "c:" <> Jason.encode!(Map.take(change, keys))
-  end
-end
-
 defimpl Jason.Encoder, for: Simperium.Message.BucketInit do
   def encode(message, opts) do
-    keys =
-      Map.keys(message) --
-        case message.cmd do
-          nil -> [:__struct__, :cmd]
-          _ -> [:__struct__]
-        end
+    {_, map} =
+      message
+      |> Map.delete(:__struct__)
+      |> Map.get_and_update(:cmd, fn
+        nil -> :pop
+        command -> {command, Simperium.MessageEncoder.encode(command)}
+      end)
 
-    Map.take(message, keys) |> Jason.Encode.map(opts)
+    Jason.Encode.map(map, opts)
   end
 end

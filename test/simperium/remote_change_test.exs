@@ -1,15 +1,15 @@
 defmodule Simperium.RemoteChangeTest do
   use ExUnit.Case
 
-  alias Simperium.RemoteChange
+  alias Simperium.Change
 
   test "make remote change" do
     change =
-      RemoteChange.create("lol", "abcd", "object-id", 0, 1, "M", %{"o" => "+", "v" => "hello"}, [
+      Change.create("lol", "abcd", "object-id", 0, 1, "M", %{"o" => "+", "v" => "hello"}, [
         "abcd"
       ])
 
-    assert %RemoteChange{
+    assert %Change{
              clientid: "lol",
              cv: "abcd",
              id: "object-id",

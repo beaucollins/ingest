@@ -1,4 +1,4 @@
-defmodule Simperium.RemoteChange do
+defmodule Simperium.Change do
   keys = [:clientid, :cv, :id, :o, :v, :ev, :ccids]
   @enforce_keys keys
   defstruct [:sv | keys]
@@ -17,6 +17,16 @@ defmodule Simperium.RemoteChange do
       v: v,
       ccids: ccids
     }
+  end
+
+  def from_json(json_map = %{"error" => error}) do
+    {:ok,
+     %Simperium.ChangeError{
+       error: error,
+       id: Map.get(json_map, "id"),
+       ccids: Map.get(json_map, "ccids"),
+       clientid: Map.get(json_map, "clientid")
+     }}
   end
 
   def from_json(json_map) do

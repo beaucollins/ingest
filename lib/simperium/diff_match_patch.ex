@@ -49,10 +49,10 @@ defmodule Simperium.DiffMatchPatch do
         end <>
         case op do
           {:eq, chars} ->
-            "=" <> (chars |> String.length() |> to_string())
+            "=" <> size_as_pairs(chars)
 
           {:del, chars} ->
-            "-" <> (chars |> String.length() |> to_string())
+            "-" <> size_as_pairs(chars)
 
           {:ins, chars} ->
             "+" <> (chars |> URI.encode() |> String.replace("%20", " "))
@@ -114,19 +114,52 @@ defmodule Simperium.DiffMatchPatch do
       |> Stream.map(&token_as_operation/1)
       |> Enum.reduce({source, acc}, fn op, {source, output} ->
         case op do
-          {:-, count} ->
-            {String.slice(source, count..-1),
-             fun.({:del, String.slice(source, 0..(count - 1))}, output)}
-
-          {:=, count} ->
-            {String.slice(source, count..-1),
-             fun.({:eq, String.slice(source, 0..(count - 1))}, output)}
-
           {:+, chars} ->
-            {source, fun.({:ins, chars}, output)}
+            {source, fun.({:ins, chars |> URI.decode()}, output)}
+
+          {op, count} ->
+            edit_mode =
+              case op do
+                := -> :eq
+                :- -> :del
+              end
+
+            {removed, rest} = split_graphemes(String.graphemes(source), count)
+
+            {rest |> to_string(), fun.({edit_mode, removed |> to_string()}, output)}
         end
       end)
 
     output
+  end
+
+  # hack
+  defp size_as_pairs(text) do
+    text
+    |> String.graphemes()
+    |> Enum.reduce(0, fn char, total ->
+      point_size(char) + total
+    end)
+    |> to_string()
+  end
+
+  defp point_size(codepoint) do
+    bytes = byte_size(codepoint)
+    div(bytes, 2) + rem(bytes, 2)
+  end
+
+  defp split_graphemes(codepoints, size) do
+    {_, len, matched} =
+      Enum.reduce_while(codepoints, {0, 0, []}, fn point, {total, len, match} ->
+        case total >= size do
+          true -> {:halt, {total, len, match}}
+          false -> {:cont, {total + point_size(point), len + 1, [point | match]}}
+        end
+      end)
+
+    {
+      matched |> Enum.reverse(),
+      codepoints |> Enum.slice(len..-1)
+    }
   end
 end

@@ -36,7 +36,7 @@ defmodule Simperium.Connection do
     # chalk-bump-f49
     url = "wss://api.simperium.com/sock/1/#{state.app_id}/websocket"
 
-    WebSockex.start_link(url, __MODULE__, state, Keyword.put(opts, :debug, [:trace]))
+    WebSockex.start_link(url, __MODULE__, state, opts |> Keyword.merge(async: true))
   end
 
   @impl true
@@ -49,21 +49,45 @@ defmodule Simperium.Connection do
   end
 
   @impl true
-  def handle_frame({:text, text}, state) do
+  def handle_frame({:text, text}, %{app_id: app_id} = state) do
     case Simperium.Message.parse(text) do
-      {:ok, message} ->
-        IO.inspect(message, label: "<=")
-        send(state.monitor, {:simperium, message})
+      {:ok, {:connection, message}} ->
+        debug(message, label: "<=*  ")
+
+        Registry.dispatch(state.registry, :connection, fn entries ->
+          Enum.each(entries, fn
+            {pid, ^app_id} ->
+              send(pid, {:simperium, :connection, message})
+
+            _ ->
+              :noop
+          end)
+        end)
+
+      {:ok, {:bucket, channel, message}} ->
+        debug(message, label: "<=#{channel}")
+
+        Registry.dispatch(state.registry, :bucket, fn entries ->
+          Enum.each(entries, fn
+            {pid, ^app_id} ->
+              send(pid, {:simperium, :bucket, channel, message})
+
+            {pid, %Simperium.Bucket.Channel{app_id: ^app_id, channel: ^channel}} ->
+              send(pid, {:simperium, :bucket, message})
+
+            _ ->
+              :noop
+          end)
+        end)
 
       {:error, reason} ->
-        IO.inspect(reason, label: "?")
+        IO.inspect(reason, label: " <?> ")
     end
 
     {:ok, state}
   end
 
-  def handle_frame(frame, state) do
-    IO.inspect(frame, label: "Unhandled frame")
+  def handle_frame(_frame, state) do
     {:ok, state}
   end
 
@@ -75,15 +99,21 @@ defmodule Simperium.Connection do
   @impl true
   def handle_cast({:bucket, channel, message}, state) do
     encoded =
-      MessageEncoder.encode(message)
-      |> IO.inspect(label: "(#{inspect(channel)}): =>")
+      message
+      |> debug(label: "  (#{inspect(channel)})=>")
+      |> MessageEncoder.encode()
+      |> IO.inspect(label: "  =>")
 
     {:reply, {:text, to_string(channel) <> ":" <> encoded}, state}
   end
 
   @impl true
   def handle_cast({:connection, message}, state) do
-    encoded = MessageEncoder.encode(message)
+    encoded =
+      message
+      |> debug(label: "  *=>")
+      |> MessageEncoder.encode()
+
     {:reply, {:text, encoded}, state}
   end
 
@@ -91,5 +121,13 @@ defmodule Simperium.Connection do
   def handle_cast(msg, state) do
     IO.puts("Handle cast #{inspect(msg)}")
     {:ok, state}
+  end
+
+  defp debug(message, opts \\ []) do
+    message
+    |> Simperium.MessageDebug.debug()
+    |> IO.inspect(opts)
+
+    message
   end
 end

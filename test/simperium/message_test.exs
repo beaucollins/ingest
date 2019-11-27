@@ -46,7 +46,7 @@ defmodule Simperium.MessageTest do
                )
 
       assert [
-               %Simperium.RemoteChange{
+               %Simperium.Change{
                  clientid: "sjs-2012121301-9af05b4e9a95132f614c",
                  id: "newobject",
                  o: "M",

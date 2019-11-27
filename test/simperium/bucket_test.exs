@@ -69,12 +69,14 @@ defmodule Simperium.BucketTest do
       bucket =
         start_supervised!(
           {Bucket,
-           %{
-             cv: "existing-cv",
-             ghosts: %{"thing" => Ghost.create_version(1, %{"name" => "mock"})},
-             index_complete?: true
-           }},
-          id: :other
+           [
+             %{
+               cv: "existing-cv",
+               ghosts: %{"thing" => Ghost.create_version(1, %{"name" => "mock"})},
+               index_complete?: true
+             },
+             [id: :other]
+           ]}
         )
 
       %{bucket: bucket}
