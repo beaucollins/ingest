@@ -158,7 +158,17 @@ defmodule Simperium.JSONDiffTest do
   test "diff strings with emoji" do
     {:ok, diff} = create_diff("❤️ SimperiumEx 🚀 Launch", "❤️ SimperiumEx Launch")
 
-    assert "=16\t-3\t=6" == diff
+    assert "=15\t-3\t=6" == diff
     assert "❤️ SimperiumEx Launch" == apply_diff!(diff, "❤️ SimperiumEx 🚀 Launch")
+  end
+
+  test "diff strings with emoji2" do
+    {:ok, diff} = create_diff(
+      "Hello SimperiumEx\n\nTime to 🚀\n\nI ❤️ Simperium\n\n",
+      "Hello"
+    )
+
+    assert "=5\t-42" = diff
+    assert "Hello" = apply_diff!("=5\t-42", "Hello SimperiumEx\n\nTime to 🚀\n\nI ❤️ Simperium\n\n")
   end
 end

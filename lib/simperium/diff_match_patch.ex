@@ -144,8 +144,9 @@ defmodule Simperium.DiffMatchPatch do
   end
 
   defp point_size(codepoint) do
-    bytes = byte_size(codepoint)
-    div(bytes, 2) + rem(bytes, 2)
+    :unicode.characters_to_binary(codepoint, :utf8, {:utf16, :little})
+    |> bit_size()
+    |> div(16)
   end
 
   defp split_graphemes(codepoints, size) do
