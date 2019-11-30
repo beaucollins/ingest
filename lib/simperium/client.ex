@@ -70,8 +70,8 @@ defmodule Simperium.Client do
   @doc """
   Start a process that syncs a bucket.
   """
-  def create_bucket(client, bucket_name, auth_token) do
-    GenServer.call(client, {:bucket, bucket_name, auth_token})
+  def create_bucket(client, auth_token, bucket) do
+    GenServer.call(client, {:bucket, auth_token, bucket})
   end
 
   @doc """
@@ -143,7 +143,10 @@ defmodule Simperium.Client do
 
         # TODO: Dynamic Supervisor
         {:ok, bucket} =
-          Simperium.Bucket.start_link(registry: Simperium.MessageConsumer, channel: channel)
+          Simperium.Bucket.start_link(
+            registry: Simperium.MessageConsumer,
+            channel: channel
+          )
 
         message = %Simperium.Message.BucketInit{
           clientid: "the-missile-knows-where-it-is",

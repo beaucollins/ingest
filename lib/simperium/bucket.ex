@@ -45,9 +45,6 @@ defmodule Simperium.Bucket do
     GenServer.call(bucket, {:put, id, value})
   end
 
-  @doc """
-  """
-
   def has_complete_index?(bucket) do
     GenServer.call(bucket, :index_complete?)
   end
@@ -61,13 +58,6 @@ defmodule Simperium.Bucket do
   end
 
   @doc """
-  Apply a command to this bucket received by Simperium. See `Simperium.Message`.
-  """
-  def apply_command(bucket, command = %Message.RemoteChanges{}) do
-    GenServer.call(bucket, {:apply_command, command})
-  end
-
-  @doc """
   Given a `Simperium.Bucket`s state, returns the init command that should be used when
   connecting to Simperium's real-time sync service.
   """
@@ -75,53 +65,77 @@ defmodule Simperium.Bucket do
     GenServer.call(bucket, :init_command)
   end
 
-  @doc """
-  Start a `Simperium.Bucket` process. To function correctly it requires a `Simperium.Connection`.
-  """
-  def start_link(opts) do
-    start_link(%{}, opts)
+  def apply_command(bucket, command) do
+    GenServer.call(bucket, {:apply_command, command})
   end
 
-  def start_link(state, opts) when is_map(state) do
-    registry = Keyword.fetch!(opts, :registry)
-    channel = Keyword.fetch!(opts, :channel)
-
-    GenServer.start_link(
-      __MODULE__,
-      default_state()
-      |> Map.merge(state)
-      |> Map.merge(%{registry: registry, channel: channel}),
-      opts |> Keyword.drop([:registry, :channel])
-    )
+  def start_link(init_arg, opts \\ []) do
+    GenServer.start_link(__MODULE__, init_arg, opts)
   end
+
+  # @spec start_link(map, keyword) :: :ignore | {:error, any} | {:ok, pid}
+  # def start_link(state, opts) when is_map(state) do
+  #   registry = Keyword.fetch!(opts, :registry)
+  #   channel = Keyword.fetch!(opts, :channel)
+
+  #   GenServer.start_link(
+  #     __MODULE__,
+  #     default_state()
+  #     |> Map.merge(state)
+  #     |> Map.merge(%{registry: registry, channel: channel}),
+  #     opts |> Keyword.drop([:registry, :channel])
+  #   )
+  # end
 
   #
   # Server
   #
   @impl true
-  def init(%{registry: registry, channel: channel} = state) do
+  def init(registry: registry, channel: channel, state: state) do
     Registry.register(registry, :bucket, channel)
-    {:ok, state}
+
+    {:ok,
+     %{
+       registry: registry,
+       channel: channel,
+       bucket: Map.merge(default_state(), state)
+     }}
+  end
+
+  def init(registry: registry, channel: channel) do
+    Registry.register(registry, :bucket, channel)
+
+    {:ok,
+     %{
+       registry: registry,
+       channel: channel,
+       bucket: default_state()
+     }}
+  end
+
+  @impl true
+  def init(_init_arg) do
+    {:stop, :invalid_init_arg}
   end
 
   @impl true
   def handle_call({:get, id}, _from, state) do
-    {:reply, Map.get(state.ghosts, id), state}
+    {:reply, Map.get(state.bucket.ghosts, id), state}
   end
 
   @impl true
   def handle_call(:cv, _from, state) do
-    {:reply, state.cv, state}
+    {:reply, state.bucket.cv, state}
   end
 
   @impl true
-  def handle_call(:init_command, _from, %{cv: :new, index_complete?: true} = state) do
+  def handle_call(:init_command, _from, %{bucket: %{cv: :new, index_complete?: true}} = state) do
     # no cv, but index is completed? No message needs to be sent
     {:reply, :noop, state}
   end
 
   @impl true
-  def handle_call(:init_command, _from, %{cv: cv, index_complete?: true} = state) do
+  def handle_call(:init_command, _from, %{bucket: %{cv: cv, index_complete?: true}} = state) do
     {:reply, %Message.ChangeVersion{cv: cv}, state}
   end
 
@@ -134,44 +148,44 @@ defmodule Simperium.Bucket do
   def handle_call(
         {:apply_command, _command = %Message.RemoteChanges{}},
         _from,
-        %{index_complete?: false} = state
+        %{bucket: %{index_complete?: false}} = state
       ) do
     {:reply, {:error, :noindex}, state}
   end
 
   @impl true
-  def handle_call({:apply_command, command = %Message.RemoteChanges{}}, _from, state) do
-    # all changes must be applied now? or does this get queued up
-    case command.changes |> Enum.reduce({:ok, [], state}, &reduce_changes/2) do
-      {:ok, updates, new_state} -> {:reply, {:ok, updates}, new_state}
-      {:error, reason} -> {:reply, {:error, reason}, state}
-    end
-  end
-
-  @impl true
-  def handle_call(:index_complete?, _from, %{index_complete?: index_complete?} = state) do
+  def handle_call(:index_complete?, _from, %{bucket: %{index_complete?: index_complete?}} = state) do
     {:reply, index_complete?, state}
   end
 
-  def handle_call(:request_changes, _from, %{index_complete?: false} = state) do
+  def handle_call(:request_changes, _from, %{bucket: %{index_complete?: false}} = state) do
     {:reply, {:error, :no_index}, state}
   end
 
-  def handle_call(:request_changes, _form, %{cv: cv} = state) do
+  @impl true
+  def handle_call(:request_changes, _form, %{bucket: %{cv: cv}} = state) do
     broadcast_message(%Message.ChangeVersion{cv: cv}, state)
     {:reply, cv, state}
   end
 
+  @impl true
   def handle_call(:reindex, _from, state) do
     broadcast_message(initial_index_request(), state)
     {:reply, :ok, state}
+  end
+
+  @impl true
+  def handle_call({:apply_command, command}, _from, state) do
+    case handle_command(command, state) do
+      {:ok, result, state} -> {:reply, {:ok, result}, state}
+    end
   end
 
   def handle_call({:put, id, value}, _from, state) do
     # build the Change and seind
     # TODO pending changes, network changes
     {operation, source} =
-      case Map.get(state.ghosts, id) do
+      case Map.get(state.bucket.ghosts, id) do
         nil ->
           {"+", Simperium.Ghost.create_version(0, %{})}
 
@@ -183,7 +197,7 @@ defmodule Simperium.Bucket do
       {:ok, diff} ->
         change_request = %Simperium.Message.ChangeRequest{
           clientid: "the-missile-knows-where-it-is",
-          cv: state.cv,
+          cv: state.bucket.cv,
           ccid: UUID.uuid4(),
           id: id,
           o: operation,
@@ -201,14 +215,34 @@ defmodule Simperium.Bucket do
   end
 
   @impl true
-  def handle_info(
-        {:simperium, :bucket, command = %Message.IndexPage{}},
-        %{ghosts: ghosts} = state
-      ) do
+  def handle_info({:simperium, :bucket, command}, state) do
+    case handle_command(command, state) do
+      {:ok, _reply, state} -> {:noreply, state}
+      {:ok, state} -> {:noreply, state}
+    end
+  end
+
+  @impl true
+  def handle_info(_msg, state) do
+    {:noreply, state}
+  end
+
+  defp handle_command(command = %Simperium.Message.RemoteChanges{}, state) do
+    case command.changes |> Enum.reduce({:ok, [], state.bucket}, &reduce_changes/2) do
+      {:ok, updates, bucket} -> {:ok, updates, %{state | bucket: bucket}}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp handle_command(command = %Message.IndexPage{}, state) do
     ghosts =
-      Enum.reduce(command.index, ghosts, fn %{"d" => data, "id" => id, "v" => version}, ghosts ->
-        Map.put(ghosts, id, Ghost.create_version(version, data))
-      end)
+      Enum.reduce(
+        command.index,
+        state.bucket.ghosts,
+        fn %{"d" => data, "id" => id, "v" => version}, ghosts ->
+          Map.put(ghosts, id, Ghost.create_version(version, data))
+        end
+      )
 
     complete =
       case Message.IndexRequest.next_page(command) do
@@ -220,26 +254,15 @@ defmodule Simperium.Bucket do
           %{index_complete?: false, cv: command.current}
       end
 
-    {:noreply, state |> Map.put(:ghosts, ghosts) |> Map.merge(complete)}
+    {
+      :ok,
+      %{state | bucket: Map.put(state.bucket, :ghosts, ghosts) |> Map.merge(complete)}
+    }
   end
 
-  @impl true
-  def handle_info({:simperium, :bucket, command = %Simperium.Message.RemoteChanges{}}, state) do
-    case command.changes |> Enum.reduce({:ok, [], state}, &reduce_changes/2) do
-      {:ok, _updates, new_state} -> {:noreply, new_state}
-      {:error, _reason} -> {:noreply, state}
-    end
-  end
-
-  @impl true
-  def handle_info({:simperium, :bucket, message}, state) do
-    IO.inspect(message, label: "Perform bucket command")
-    {:noreply, state}
-  end
-
-  @impl true
-  def handle_info(_msg, state) do
-    {:noreply, state}
+  defp handle_command(command, state) do
+    IO.inspect(command, label: "Unhandled command")
+    {:ok, state}
   end
 
   defp fetch_ghost(ghosts, object_id, start_version) do
@@ -253,19 +276,19 @@ defmodule Simperium.Bucket do
     changes
   end
 
-  defp reduce_changes(change = %Change{}, {:ok, updates, state}) do
+  defp reduce_changes(change = %Change{}, {:ok, updates, bucket}) do
     case change.o do
       "-" ->
-        {removed, ghosts} = Map.pop(state.ghosts, change.id)
-        {:ok, [{change.cv, removed} | updates], %{state | ghosts: ghosts}}
+        {removed, ghosts} = Map.pop(bucket.ghosts, change.id)
+        {:ok, [{change.cv, removed} | updates], %{bucket | ghosts: ghosts}}
 
       "M" ->
-        with {:ok, ghost} <- fetch_ghost(state.ghosts, change.id, change.sv),
+        with {:ok, ghost} <- fetch_ghost(bucket.ghosts, change.id, change.sv),
              {:ok, updated} <- Simperium.JSONDiff.apply_diff(change.v, ghost.value),
              next_ghost <- Ghost.create_version(change.ev, updated),
              do:
                {:ok, [{change.cv, next_ghost}],
-                %{state | cv: change.cv, ghosts: Map.put(state.ghosts, change.id, next_ghost)}}
+                %{bucket | cv: change.cv, ghosts: Map.put(bucket.ghosts, change.id, next_ghost)}}
 
       _ ->
         {:error, {:invalid_change_operation, change.o, change.cv}}
@@ -282,10 +305,16 @@ defmodule Simperium.Bucket do
     }
   end
 
-  defp broadcast_message(message, %{channel: %{app_id: app_id}} = state) do
-    Registry.dispatch(state.registry, :channel, fn entries ->
+  defp broadcast_message(
+         message,
+         %{
+           registry: registry,
+           channel: %Channel{app_id: app_id} = channel
+         }
+       ) do
+    Registry.dispatch(registry, :channel, fn entries ->
       for {pid, ^app_id} <- entries,
-          do: send(pid, {:simperium, :channel, state.channel, message})
+          do: send(pid, {:simperium, :channel, channel, message})
     end)
   end
 

@@ -2,12 +2,23 @@ defmodule Simperium.BucketTest do
   use ExUnit.Case, async: true
 
   alias Simperium.Bucket
-  alias Simperium.RemoteChange
+  alias Simperium.Change
   alias Simperium.Ghost
 
   describe "new bucket with index" do
     setup do
-      %{bucket: start_supervised!({Bucket, %{index_complete?: true}})}
+      %{
+        registry: start_supervised!({Registry, [keys: :duplicate, name: Simperium.BucketTest]}),
+        bucket:
+          start_supervised!(
+            {Bucket,
+             [
+               registry: Simperium.BucketTest,
+               channel: %Bucket.Channel{},
+               state: %{index_complete?: true}
+             ]}
+          )
+      }
     end
 
     test "get cv", %{bucket: bucket} do
@@ -25,7 +36,7 @@ defmodule Simperium.BucketTest do
     test "perform change", %{bucket: bucket} do
       command = %Simperium.Message.RemoteChanges{
         changes: [
-          RemoteChange.create(
+          Change.create(
             "mock-client",
             "mock-cv",
             "an-object",
@@ -43,13 +54,19 @@ defmodule Simperium.BucketTest do
       ghost = Ghost.create_version(1, %{"note" => "hello"})
       assert {:ok, [{"mock-cv", ghost}]} == result
       assert "mock-cv" == Bucket.cv(bucket)
-      assert ghost == Bucket.get(bucket, "an-object")
+      assert ghost.value == Bucket.get(bucket, "an-object")
     end
   end
 
   describe "bucket unindexed" do
     setup do
-      %{bucket: start_supervised!({Bucket, :new}, id: :unindexed)}
+      %{
+        registry: start_supervised!({Registry, [keys: :duplicate, name: Simperium.BucketTest]}),
+        bucket:
+          start_supervised!(
+            {Bucket, [registry: Simperium.BucketTest, channel: %Bucket.Channel{}]}
+          )
+      }
     end
 
     test "remote changes require an index", %{bucket: bucket} do
@@ -66,20 +83,23 @@ defmodule Simperium.BucketTest do
 
   describe "bucket indexed with ghosts" do
     setup do
+      registry = start_supervised!({Registry, [keys: :duplicate, name: Simperium.BucketTest]})
+
       bucket =
         start_supervised!(
           {Bucket,
            [
-             %{
+             registry: Simperium.BucketTest,
+             channel: %Bucket.Channel{},
+             state: %{
                cv: "existing-cv",
                ghosts: %{"thing" => Ghost.create_version(1, %{"name" => "mock"})},
                index_complete?: true
-             },
-             [id: :other]
+             }
            ]}
         )
 
-      %{bucket: bucket}
+      %{bucket: bucket, registry: registry}
     end
 
     test "init command", %{bucket: bucket} do
@@ -89,7 +109,7 @@ defmodule Simperium.BucketTest do
 
     test "delete ghost", %{bucket: bucket} do
       changes = %Simperium.Message.RemoteChanges{
-        changes: [RemoteChange.create("client", "abcd", "thing", 1, 0, "-", %{}, ["mock-ccid"])]
+        changes: [Change.create("client", "abcd", "thing", 1, 0, "-", %{}, ["mock-ccid"])]
       }
 
       assert {:ok, [{"abcd", %Ghost{version: 1, value: %{"name" => "mock"}}}]} =
