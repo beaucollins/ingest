@@ -1,5 +1,5 @@
 defmodule Traverse.ExpTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
 
   import Traverse.Document
   import Traverse.Matcher

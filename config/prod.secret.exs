@@ -27,6 +27,9 @@ config :ingest, IngestWeb.Endpoint,
   http: [:inet6, port: String.to_integer(System.get_env("PORT") || "4000")],
   secret_key_base: secret_key_base
 
+config :mnesia, :dir, "Mnesia.ingest"
+
+
 # ## Using releases (Elixir v1.9+)
 #
 # If you are doing OTP releases, you need to instruct Phoenix

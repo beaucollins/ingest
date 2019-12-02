@@ -2,7 +2,7 @@ defmodule Traverse.DocumentTest do
   alias Traverse.Document
   alias Traverse.Matcher
 
-  use ExUnit.Case
+  use ExUnit.Case, async: true
 
   doctest Traverse.Document
 
