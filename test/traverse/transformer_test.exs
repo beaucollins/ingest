@@ -1,5 +1,5 @@
 defmodule Traverse.TransformerTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
 
   doctest Traverse.Transformer
 

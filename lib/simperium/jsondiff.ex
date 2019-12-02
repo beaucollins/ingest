@@ -346,7 +346,7 @@ defmodule Simperium.JSONDiff do
   end
 
   def apply_diff(patch, source) do
-    {:error, :invalid_diff, patch, source}
+    {:error, {:invalid_diff, patch, source}}
   end
 
   defp diff_key_operation(source, target) when source == target, do: {:ok, :=}

@@ -6,7 +6,7 @@ defmodule Simperium.Message.ChangeRequest do
       ...> |> encode()
       ~s(c:{"ccid":"unique-ccid","clientid":"client-ex-1","id":"object-key","o":"M","sv":0,"v":{"title":{"o":"+","v":"Hello"}}})
   """
-
+  @enforce_keys [:ccid, :id, :o]
   defstruct [:clientid, :cv, :ev, :sv, :id, :o, :v, :ccid, :d]
 
   @doc """

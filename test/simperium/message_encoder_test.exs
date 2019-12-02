@@ -1,5 +1,5 @@
 defmodule Simperium.MessageEncoderTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
 
   import Simperium.MessageEncoder
   alias Simperium.Message

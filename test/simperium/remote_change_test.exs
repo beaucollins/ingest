@@ -1,5 +1,5 @@
 defmodule Simperium.RemoteChangeTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
 
   alias Simperium.Change
 

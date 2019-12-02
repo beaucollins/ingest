@@ -1,5 +1,5 @@
 defmodule Simperium.JSONDiffTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
   import Simperium.JSONDiff
 
   doctest Simperium.JSONDiff
