@@ -1,13 +1,17 @@
 image: elixir:latest
 
-cache:
-  paths:
-    - deps/
+services:
+  - postgres:latest
+
+variables:
+  POSTGRES_DB: ingest_repo_test
+  POSTGRES_USER: ingest
+  POSTGRES_PASSWORD: ""
+  POSTGRES_HOST: postgres
 
 before_script:
   - mix local.hex --force
   - mix local.rebar --force
-  - mix deps.clean --all
   - mix deps.get
 
 test:
@@ -18,10 +22,12 @@ test:
     paths:
       - cover
 
-docs:
+pages:
   stage: deploy
   script:
-    - mix docs
+  - mix docs --output public
   artifacts:
     paths:
-      - doc
+    - public
+  only:
+  - master
