@@ -163,10 +163,11 @@ defmodule Simperium.JSONDiffTest do
   end
 
   test "diff strings with emoji2" do
-    {:ok, diff} = create_diff(
-      "Hello SimperiumEx\n\nTime to 🚀\n\nI ❤️ Simperium\n\n",
-      "Hello"
-    )
+    {:ok, diff} =
+      create_diff(
+        "Hello SimperiumEx\n\nTime to 🚀\n\nI ❤️ Simperium\n\n",
+        "Hello"
+      )
 
     assert "=5\t-42" = diff
     assert "Hello" = apply_diff!("=5\t-42", "Hello SimperiumEx\n\nTime to 🚀\n\nI ❤️ Simperium\n\n")

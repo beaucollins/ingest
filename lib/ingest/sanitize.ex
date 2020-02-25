@@ -57,6 +57,11 @@ defmodule Ingest.Sanitize do
         )
       ])
     )
-    |> Traverse.Document.to_string()
+    |> Enum.map(fn
+      node when is_binary(node) ->
+        node
+      node -> :mochiweb_html.to_html(node)
+    end)
+    |> to_string()
   end
 end

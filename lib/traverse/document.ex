@@ -90,12 +90,17 @@ defmodule Traverse.Document do
     as_string(document)
   end
 
-  defp as_string({"iframe", atts, []}) do
-    as_string({"iframe", atts, [""]})
-  end
+  ["img", "hr"]
+  |> Enum.each(fn element ->
+    IO.puts(element)
+
+    defp as_string({unquote(element), atts, []}) do
+      "<" <> unquote(element) <> attribute_list_string(atts) <> " />"
+    end
+  end)
 
   defp as_string({element, atts, []}) do
-    "<" <> element <> attribute_list_string(atts) <> " />"
+    as_string({element, atts, [""]})
   end
 
   defp as_string({element, atts, children}) do

@@ -4,9 +4,9 @@ defmodule Simperium.DiffMatchPatchTest do
 
   doctest Simperium.DiffMatchPatch
 
-
   test "diff_main" do
-    assert [eq: "ab", del: "c", ins: "d", eq: "ef"] == diff_main("abcef", "abdef") |> diff_cleanup_efficiency()
+    assert [eq: "ab", del: "c", ins: "d", eq: "ef"] ==
+             diff_main("abcef", "abdef") |> diff_cleanup_efficiency()
   end
 
   test "diff_main unicode points" do
@@ -42,6 +42,7 @@ defmodule Simperium.DiffMatchPatchTest do
       {:eq, " lazy"},
       {:ins, "old dog"}
     ]
+
     assert diffs === "jumps over the lazy" |> diff_from_delta(diffs |> diff_to_delta())
   end
 end
