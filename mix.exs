@@ -52,7 +52,7 @@ defmodule Ingest.MixProject do
       {:feedraptor, "~> 0.3.0"},
       {:phoenix, "~> 1.4.11"},
       {:phoenix_html, "~> 2.13.3"},
-      {:libcluster, "~>3.1.0"},
+      {:libcluster, "~>3.2.0"},
       {:websockex, "~> 0.4.2"},
       {:elixir_uuid, "~> 1.2"},
       {:ex_doc, "~>0.21", only: :dev, runtime: false}

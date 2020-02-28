@@ -1,4 +1,4 @@
-FROM elixir:1.9-alpine
+FROM elixir:1.9-alpine as builder
 
 RUN apk add --no-cache bash;\
 	mix local.hex --force;\
@@ -17,13 +17,14 @@ COPY priv priv
 COPY test test
 COPY rel rel
 
-RUN mkdir -p /usr/local/bin
-
-RUN mix release --path /var/release
+RUN MIX_ENV=prod mix release --path /var/release
 
 RUN rm -fr /var/app/src/
-RUN mkdir -p /var/data/ingest
-COPY docker-entrypoint.sh /usr/local/bin/
 
-ENTRYPOINT [ "docker-entrypoint.sh" ]
-CMD /var/release/bin/ingest start
+FROM elixir:1.9-alpine
+
+COPY --from=builder /var/release /var/release
+WORKDIR /var/release
+RUN mkdir -p /var/data/ingest
+
+CMD ./bin/ingest start

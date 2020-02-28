@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ingest
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: ingest
+  template:
+    metadata:
+      labels:
+        app: ingest
+    spec:
+      containers:
+      - name: ingest
+        image: coplusco/ingest:exp
+        env:
+          - name: POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+          - name: RELEASE_DISTRIBUTION
+            value: name
+          - name: RELEASE_COOKIE
+            value: "cookie"
+          - name: NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+        ports:
+        - containerPort: 4000

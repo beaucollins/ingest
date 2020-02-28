@@ -60,7 +60,9 @@ defmodule Ingest.Sanitize do
     |> Enum.map(fn
       node when is_binary(node) ->
         node
-      node -> :mochiweb_html.to_html(node)
+
+      node ->
+        :mochiweb_html.to_html(node)
     end)
     |> to_string()
   end

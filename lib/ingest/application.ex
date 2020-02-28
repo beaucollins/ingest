@@ -7,23 +7,16 @@ defmodule Ingest.Application do
 
   def start(_type, args) do
     # List all child processes to be supervised
+    topologies = Application.get_env(:libcluster, :topologies)
+
     children = [
       # Starts a worker by calling: Ingest.Worker.start_link(arg)
       # {Ingest.Worker, arg},
       {Plug.Cowboy, scheme: :http, plug: Ingest.Service, options: [dispatch: dispatch()]},
-      {Cluster.Supervisor,
-       [
-         [
-           swarm_dns_poll: [
-             strategy: Cluster.Strategy.DNSPoll,
-             config: [
-               query: "tasks.ingest",
-               node_basename: "ingest"
-             ]
-           ]
-         ]
-       ]}
+      {Cluster.Supervisor, [topologies, [name: Ingest.ClusterSupervisor]]}
     ]
+
+    IO.puts("Who am I #{Node.self()}")
 
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
