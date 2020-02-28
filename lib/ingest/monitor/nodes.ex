@@ -3,6 +3,6 @@ defmodule Ingest.Monitor.Nodes do
   defstruct [:nodes, current: Node.self()]
 
   def status() do
-    %Ingest.Monitor.Nodes{nodes: Node.list([:this, :connected])}
+    %Ingest.Monitor.Nodes{nodes: Node.list([:this, :connected]), current: Node.self()}
   end
 end
