@@ -92,8 +92,6 @@ defmodule Traverse.Document do
 
   ["img", "hr"]
   |> Enum.each(fn element ->
-    IO.puts(element)
-
     defp as_string({unquote(element), atts, []}) do
       "<" <> unquote(element) <> attribute_list_string(atts) <> " />"
     end

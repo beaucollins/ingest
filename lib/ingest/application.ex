@@ -16,8 +16,6 @@ defmodule Ingest.Application do
       {Cluster.Supervisor, [topologies, [name: Ingest.ClusterSupervisor]]}
     ]
 
-    IO.puts("Who am I #{Node.self()}")
-
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: Ingest.Supervisor]
