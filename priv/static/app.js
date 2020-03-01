@@ -8,14 +8,22 @@
  * }} LogEntry
  *
  * @typedef {{
+ *  title: string,
+ *  host: string,
+ *  url: string,
  * }} Feed
+ *
+ * @typedef {(
+ *   | ['ok', string, Array<Feed>]
+ *   | ['error', string, string]
+ * )} FeedResult
  *
  * @typedef {{
  *   current: ?string,
  *   nodes: Array<string>,
  *   readyState: WebSocketReadyState,
  *   log: {[uuid: string]: LogEntry},
- *   feeds: Array<Feed>
+ *   feeds: Array<FeedResult>
  * }} State
  *
  * @typedef {{
@@ -29,7 +37,7 @@
  *  | {type: 'NODES', nodes:{ nodes: Array<string>, current: string }}
  *  | {type: 'CMD', descriptor: Command }
  *  | {type: 'RES', descriptor: Command }
- *  | {type: 'DISCOVER', feeds: Array<Feed> }
+ *  | {type: 'DISCOVER', feeds: FeedResult }
  * )} Action
  *
  * @typedef { import('redux').Dispatch<Action> } Dispatch
@@ -52,11 +60,16 @@ const e = React.createElement;
  * | WebSocketStateClosed
  * )}  WebSocketReadyState
  *
- * @type React.FunctionComponent<State>
- * @param {State & {onInput: (value: string) => void}} props
- * @return React.Node
+ * @typedef {{
+ *   onInput: (value: string) => void,
+ *   onOpenFeed: (feed: Feed) => void,
+ * }} DispatchProps
+ * @typedef {State} StateProps
+ *
+ * @param {StateProps & DispatchProps} props
+ * @return {React.ReactNode}
  */
-function Monitor({ current, nodes, readyState, log, feeds, onInput }) {
+function Monitor({ current, nodes, readyState, log, feeds, onInput, onOpenFeed }) {
 	return e('div', {}, [
 		e('div', { key: 'status' },
 			e(React.Fragment, {}, [
@@ -84,7 +97,7 @@ function Monitor({ current, nodes, readyState, log, feeds, onInput }) {
 			Object.keys(log).map(uuid => e('li', { key: uuid }, e(React.Fragment, {}, [uuid, ' - ', log[uuid].res[0]])))
 		),
 		e('ul', { key: 'feeds', style: { display: 'flex', flexDirection: 'column-reverse' } },
-			feeds.map((feed, i) => e('li', { key: i }, JSON.stringify(feed))))
+			feeds.map((feed, i) => e('li', { key: i }, FeedItem({feed, onOpenFeed}))))
 	]);
 }
 
@@ -92,16 +105,20 @@ function Monitor({ current, nodes, readyState, log, feeds, onInput }) {
 const App = ReactRedux.connect(
 	/**
 	 * @param {State} state
-	 * @return State
+	 * @return StateProps
 	 */
 	state => state,
 	/**
 	 * @param {Dispatch} dispatch
-	 * @return {{onInput: (value: string) => void }}
+	 * @return {DispatchProps}
 	 */
 	dispatch => ({
 		onInput: (input) => {
 			dispatch(discover([input]));
+		},
+		onOpenFeed: (feed) => {
+			window.open('/info/' + encodeURIComponent(feed.url));
+			console.log('what to do with', feed);
 		}
 	})
 )(Monitor);
@@ -173,8 +190,8 @@ function reducer(state = { readyState: -1, current: null, nodes: [], log: {}, fe
 		case 'DISCOVER': {
 			return {
 				...state,
-				feeds: [...state.feeds, action.feeds],
-			}
+				feeds: state.feeds.concat([action.feeds])
+			};
 		}
 		default: {
 			return state;
@@ -337,5 +354,43 @@ function connect(store) {
 			}
 		}
 		return next(action);
+	}
+}
+
+/**
+ * @typedef {{feed: FeedResult, onOpenFeed:(feed: Feed) => void}} Props
+ * @param {Props} props
+ * @return {React.ReactNode}
+ */
+function FeedItem({feed, onOpenFeed}) {
+	/**
+	 *
+	 * @param {{title: string, host:string, url:string}} feed
+	 * @return {React.MouseEventHandler}
+	 */
+	function openFeed(feed) {
+		return function(event) {
+			event.preventDefault();
+			onOpenFeed(feed);
+		}
+	}
+	switch(feed[0]) {
+		case 'ok': {
+			const feeds = feed[2];
+			return e(React.Fragment, {}, feeds.reduce(
+				/**
+				 * @param {Array<React.ReactNode>} children
+				 * @param {Feed} feed
+				 * @return {Array<React.ReactNode>}
+				 */
+				(children, feed) =>
+					children.concat(children.length > 0 ? ', ' : '', e('a', {title: feed.url, href: '#', onClick: openFeed(feed)}, feed.title)),
+				[],
+			));
+		}
+		case 'error': {
+			const reason = feed[2];
+			return `${feed[1]}: error ${reason}`;
+		}
 	}
 }
