@@ -119,7 +119,7 @@ defmodule Traverse.Transformer do
   defp map_fragment({_element, _atts, _children} = node, mapper) do
     case mapper.(node) do
       {element, atts, children} ->
-        {element, atts, map_fragment(children, mapper)}
+        {element, atts, List.flatten(map_fragment(children, mapper))}
 
       node ->
         map_fragment(node, mapper)

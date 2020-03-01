@@ -19,8 +19,25 @@ defmodule Ingest.Sanitize do
       ~s[<p class="cls" id="id">Hello.  World.</p><p>🚀.</p>]
   """
   def sanitize_html(content) do
+    sanitize(content)
+    |> Enum.map(fn
+      node when is_binary(node) ->
+        node
+
+      node ->
+        :mochiweb_html.to_html(node)
+      end)
+    |> to_string()
+  end
+
+  def parse(content) do
     ("<Fragment>" <> content)
     |> Traverse.parse()
+
+  end
+
+  def sanitize(content) do
+    parse(content)
     |> Traverse.map(
       transform_first([
         transform(
@@ -46,7 +63,7 @@ defmodule Ingest.Sanitize do
             ol
             p pre
             q
-            s small span strong subsup
+            s small span strong sub sup
             table tbody td tfoot thead time tr
             u ul
             var
@@ -57,20 +74,5 @@ defmodule Ingest.Sanitize do
         )
       ])
     )
-    |> Enum.map(fn
-      node when is_binary(node) ->
-        node
-
-      node ->
-        try do
-          :mochiweb_html.to_html(node)
-        rescue
-          _e in ArgumentError ->
-            IO.inspect(node, label: "Invalid HTML?")
-            "<-- Failed to produce HTML -->"
-        end
-
-    end)
-    |> to_string()
   end
 end
