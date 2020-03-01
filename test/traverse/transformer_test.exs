@@ -43,4 +43,20 @@ defmodule Traverse.TransformerTest do
            |> Traverse.Document.to_string() ===
              ~s[<div id="stuff"><!-- testing -->HELLO<p>PARAGRAPH</p>THERE</div>]
   end
+
+  test "select_children" do
+    fragment = { "div", [], [
+      {"bad", [], [
+        {"p", [], []}
+      ]}
+    ] }
+
+    transformed = Traverse.Transformer.map(fragment, Traverse.Transformer.transform(
+      Traverse.Matcher.element_name_is("bad"),
+      Traverse.Transformer.select_children()
+    ))
+
+    assert transformed == {"div", [], [{"p", [], []}]}
+
+  end
 end
