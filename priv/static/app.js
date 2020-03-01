@@ -1,17 +1,30 @@
 /**
  * @typedef {{
- *  req: Command,
- *  res: (
- *    | ['pending', number]
- *    | ['ack', Command]
- * 	),
- * }} LogEntry
- *
- * @typedef {{
  *  title: string,
  *  host: string,
  *  url: string,
  * }} Feed
+ *
+ * @typedef {{command: 'discover', uuid: string, args: Array<string>}} DiscoverCommand
+ * @typedef {{command: 'fetchfeed', uuid: string, args: Feed}} FetchFeedCommand
+ *
+ * @typedef {(
+ *  | DiscoverCommand
+ *  | FetchFeedCommand
+ * )} Command
+ *
+ * @typedef {(
+ *  | { result: 'ok', uuid: string, response: any }
+ *  | { result: 'error', uuid: string, reason: string, response: Command }
+ * )} CommandResult
+ *
+ * @typedef {{
+ *  req: Command,
+ *  res: (
+ *    | ['pending', number]
+ *    | ['ack', CommandResult]
+ * 	),
+ * }} LogEntry
  *
  * @typedef {(
  *   | ['ok', string, Array<Feed>]
@@ -26,18 +39,18 @@
  *   feeds: Array<FeedResult>
  * }} State
  *
- * @typedef {{
- *  command: 'discover',
- *  uuid: string,
- *  args: Array<string>
- * }} Command
+ * @typedef {{type: 'READY_STATE_CHANGE', readyState: WebSocketReadyState}} ReadyStateChangeAction
+ * @typedef {{type: 'NODES', nodes:{ nodes: Array<string>, current: string }}} NodesAction
+ * @typedef {{type: 'CMD', descriptor: Command }} CommandAction
+ * @typedef {{type: 'RES', descriptor: CommandResult }} CommandResponseAction
+ * @typedef {{type: 'DISCOVER', feeds: FeedResult }} DiscoverAction
  *
  * @typedef {(
- *  | {type: 'READY_STATE_CHANGE', readyState: WebSocketReadyState}
- *  | {type: 'NODES', nodes:{ nodes: Array<string>, current: string }}
- *  | {type: 'CMD', descriptor: Command }
- *  | {type: 'RES', descriptor: Command }
- *  | {type: 'DISCOVER', feeds: FeedResult }
+ *  | ReadyStateChangeAction
+ *  | NodesAction
+ *  | CommandAction
+ *  | CommandResponseAction
+ *  | DiscoverAction
  * )} Action
  *
  * @typedef { import('redux').Dispatch<Action> } Dispatch
@@ -45,6 +58,48 @@
  */
 
 const e = React.createElement;
+
+/**
+ * @typedef {(command: Command) => Promise<CommandResult>} Sender
+ *
+ * @type {{[uuid: string]: {command: Command, resolve: (result: CommandResult) => void }}}
+ */
+const queue = {};
+
+// @ts-ignore Cannot find name ReactRedux
+const App = ReactRedux.connect(
+	/**
+	 * @param {State} state
+	 * @return StateProps
+	 */
+	state => state,
+	/**
+	 * @param {Dispatch} dispatch
+	 * @return {DispatchProps}
+	 */
+	dispatch => ({
+		onInput: (input) => {
+			dispatch(discover([input]));
+		},
+		onOpenFeed: (feed) => {
+			dispatch(fetchFeed(feed))
+		}
+	})
+)(Monitor);
+
+/**
+ *
+ * @typedef {import('redux').Store<State, Action>} Store
+ * @type Store
+ */
+// @ts-ignore Cannot find name Redux
+const store = Redux.createStore(reducer, Redux.applyMiddleware(connect));
+
+ReactDOM.render(
+	// @ts-ignore Cannot find name ReactRedux
+	e(ReactRedux.Provider, { store }, e(App)),
+	document.querySelector('#app')
+);
 
 /**
  * @typedef {-1} WebSocketUnknown
@@ -94,63 +149,41 @@ function Monitor({ current, nodes, readyState, log, feeds, onInput, onOpenFeed }
 			}
 		}),
 		e('ul', { key: 'log', style: { display: 'flex', flexDirection: 'column-reverse' } },
-			Object.keys(log).map(uuid => e('li', { key: uuid }, e(React.Fragment, {}, [uuid, ' - ', log[uuid].res[0]])))
+			Object.keys(log).map(uuid => e('li', { key: uuid }, e(React.Fragment, {}, [uuid, ' - ', log[uuid].res[0]], ' - ', JSON.stringify(log[uuid].res[1]))))
 		),
 		e('ul', { key: 'feeds', style: { display: 'flex', flexDirection: 'column-reverse' } },
 			feeds.map((feed, i) => e('li', { key: i }, FeedItem({feed, onOpenFeed}))))
 	]);
 }
 
-// @ts-ignore Cannot find name ReactRedux
-const App = ReactRedux.connect(
-	/**
-	 * @param {State} state
-	 * @return StateProps
-	 */
-	state => state,
-	/**
-	 * @param {Dispatch} dispatch
-	 * @return {DispatchProps}
-	 */
-	dispatch => ({
-		onInput: (input) => {
-			dispatch(discover([input]));
-		},
-		onOpenFeed: (feed) => {
-			window.open('/info/' + encodeURIComponent(feed.url));
-			console.log('what to do with', feed);
-		}
-	})
-)(Monitor);
-
-/**
- *
- * @typedef {import('redux').Store<State, Action>} Store
- * @type Store
- */
-// @ts-ignore Cannot find name Redux
-const store = Redux.createStore(reducer, Redux.applyMiddleware(connect));
-
-ReactDOM.render(
-	// @ts-ignore Cannot find name ReactRedux
-	e(ReactRedux.Provider, { store }, e(App)),
-	document.querySelector('#app')
-);
-
 /**
  * @param {Array<string>} urls
- * @return {Action}
+ * @return {CommandAction}
  */
 function discover(urls) {
 	const uuid = String(Date.now());
 
+	return command({ command: 'discover', uuid, args: urls });
+}
+
+/**
+ * @param {Feed} feed
+ * @return {CommandAction}
+ */
+function fetchFeed(feed) {
+	const uuid = String(Date.now());
+	return command({ command: 'fetchfeed', uuid, args: feed });
+}
+
+/**
+ *
+ * @param {Command} descriptor
+ * @returns {CommandAction}
+ */
+function command(descriptor) {
 	return {
 		type: 'CMD',
-		descriptor: {
-			command: 'discover',
-			uuid: uuid,
-			args: urls
-		},
+		descriptor,
 	};
 }
 
@@ -221,17 +254,11 @@ function readyState(ws) {
 }
 
 /**
- * @typedef {(command: Command) => void} Sender
- *
- * @type Array<Command>
- */
-const queue = [];
-/**
  * @return {Sender}
  */
 function queuedSend() {
 	return (command) => {
-		queue.push(command);
+		return Promise.reject(new Error('Queueing not implemented'));
 	}
 }
 
@@ -241,17 +268,36 @@ function queuedSend() {
  */
 function directSend(ws) {
 	/**
-	 *
 	 * @type {Sender}
 	 */
 	const send = command => {
+		const deferred = { command: command, resolve: () => {}}
+		queue[command.uuid] = deferred;
+		/**
+		 * @type Promise<CommandResult>
+		 */
+		const promise = new Promise((resolve) => {
+			deferred.resolve = resolve;
+		});
 		ws.send(JSON.stringify(command));
+		return promise;
 	}
-	queue.splice(0, queue.length).forEach(send);
 
 	return send;
 }
 
+/**
+ * @param {Command} command
+ * @return {Promise<CommandResult>}
+ */
+function notImplemented(command) {
+	return Promise.resolve({
+		result: 'error',
+		uuid: command.uuid,
+		reason: 'Not implemented',
+		response: command
+	});
+}
 /**
  * @typedef {(next: Dispatch) => (action: Action) => Action} SideEffect
  *
@@ -284,10 +330,10 @@ function connect(store) {
 						break;
 					}
 					case 'result': {
-						store.dispatch({
-							type: 'RES',
-							descriptor: message,
-						});
+						const deferred = queue[message.uuid];
+						if ( deferred != null ) {
+							deferred.resolve(message);
+						}
 						break;
 					}
 					default: {
@@ -314,40 +360,12 @@ function connect(store) {
 
 	open();
 
-	/**
-	 * @type {{[uuid: string]: {
-	 *  deferred: Promise<*>,
-	 * 	resolve: (value: any | undefined) => void
-	 * }}}
-	 */
-	let pending = {};
-
 	return next => action => {
 		switch (action.type) {
 			case 'CMD': {
-				send(action.descriptor);
-				/**
-				 * @type {?((value: any) => void)}
-				 */
-				let resolve;
-				const deferred =
-					new Promise((inner, reject) => {
-						const timer = setTimeout(function () {
-							reject(new Error('timeout'));
-						}, 1000);
-
-						resolve = function (value) {
-							clearTimeout(timer);
-							inner(value);
-						};
-					});
-				pending[action.descriptor.uuid] = { deferred, resolve: (value) => resolve ? resolve(value) : null };
-				break;
-			}
-			case 'RES': {
-				const deferred = pending[action.descriptor.uuid] || { resolve: () => { } };
-				deferred.resolve(undefined);
-				break;
+				send(action.descriptor).then(descriptor => {
+					store.dispatch({ type: 'RES', descriptor })
+				});
 			}
 			default: {
 				break;
@@ -358,8 +376,8 @@ function connect(store) {
 }
 
 /**
- * @typedef {{feed: FeedResult, onOpenFeed:(feed: Feed) => void}} Props
- * @param {Props} props
+ * @typedef {{feed: FeedResult, onOpenFeed:(feed: Feed) => void}} FeedItemProps
+ * @param {FeedItemProps} props
  * @return {React.ReactNode}
  */
 function FeedItem({feed, onOpenFeed}) {
@@ -391,6 +409,9 @@ function FeedItem({feed, onOpenFeed}) {
 		case 'error': {
 			const reason = feed[2];
 			return `${feed[1]}: error ${reason}`;
+		}
+		default: {
+			return 'Unknown';
 		}
 	}
 }
