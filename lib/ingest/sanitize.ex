@@ -25,14 +25,8 @@ defmodule Ingest.Sanitize do
         node
 
       node ->
-        try do
-          :mochiweb_html.to_html(node)
-        rescue
-          _e in ArgumentError ->
-            IO.inspect([node, content], label: "Invalid HTML?")
-            "<-- Failed to produce HTML -->"
-        end
-    end)
+        :mochiweb_html.to_html(node)
+      end)
     |> to_string()
   end
 
