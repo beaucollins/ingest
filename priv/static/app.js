@@ -316,7 +316,6 @@ function connect(store) {
 				const deferred =
 					new Promise((inner, reject) => {
 						const timer = setTimeout(function () {
-							console.log('rejected');
 							reject(new Error('timeout'));
 						}, 1000);
 
@@ -334,7 +333,6 @@ function connect(store) {
 				break;
 			}
 			default: {
-				console.log('TYPE', action.type, action );
 				break;
 			}
 		}
