@@ -1,5 +1,58 @@
+/**
+ * @typedef {{
+ *  req: Command,
+ *  res: (
+ *    | ['pending', number]
+ *    | ['ack', Command]
+ * 	),
+ * }} LogEntry
+ *
+ * @typedef {{
+ * }} Feed
+ *
+ * @typedef {{
+ *   current: ?string,
+ *   nodes: Array<string>,
+ *   readyState: WebSocketReadyState,
+ *   log: {[uuid: string]: LogEntry},
+ *   feeds: Array<Feed>
+ * }} State
+ *
+ * @typedef {{
+ *  command: 'discover',
+ *  uuid: string,
+ *  args: Array<string>
+ * }} Command
+ *
+ * @typedef {(
+ *  | {type: 'READY_STATE_CHANGE', readyState: WebSocketReadyState}
+ *  | {type: 'NODES', nodes:{ nodes: Array<string>, current: string }}
+ *  | {type: 'CMD', descriptor: Command }
+ *  | {type: 'RES', descriptor: Command }
+ *  | {type: 'DISCOVER', feeds: Array<Feed> }
+ * )} Action
+ */
+
 const e = React.createElement;
 
+/**
+ * @typedef {-1} WebSocketUnknown
+ * @typedef {0} WebSocketStateConnecting
+ * @typedef {1} WebSocketStateOpen
+ * @typedef {2} WebSocketStateClosing
+ * @typedef {3} WebSocketStateClosed
+ * @typedef {(
+ * | WebSocketUnknown
+ * | WebSocketStateConnecting
+ * | WebSocketStateOpen
+ * | WebSocketStateClosing
+ * | WebSocketStateClosed
+ * )}  WebSocketReadyState
+ *
+ * @type React.FunctionComponent<State>
+ * @param {State & {onInput: (value: string) => void}} props
+ * @return React.Node
+ */
 function Monitor({ current, nodes, readyState, log, feeds, onInput }) {
 	return e('div', {}, [
 		e('div', { key: 'status' },
@@ -32,8 +85,17 @@ function Monitor({ current, nodes, readyState, log, feeds, onInput }) {
 	]);
 }
 
+// @ts-ignore Cannot find name ReactRedux
 const App = ReactRedux.connect(
+	/**
+	 * @param {State} state
+	 * @return State
+	 */
 	state => state,
+	/**
+	 * @param {Dispatch} dispatch
+	 * @return {{onInput: (value: string) => void }}
+	 */
 	dispatch => ({
 		onInput: (input) => {
 			dispatch(discover([input]));
@@ -41,31 +103,48 @@ const App = ReactRedux.connect(
 	})
 )(Monitor);
 
+/**
+ *
+ * @param {Store} store
+ */
 function connect(store) {
+	/**
+	 * @param {number} attempt
+	 * @return number
+	 */
 	function timeout(attempt) {
 		return 200 + Math.min(Math.pow(5, attempt), 10000);
 	}
 
+	/**
+	 *
+	 * @param {(event: MessageEvent) => void} onMessage
+	 */
 	const connection = function (onMessage) {
 		let attempt = 0;
 
+		/**
+		 *
+		 * @param {(event: MessageEvent) => void} onMessage
+		 */
 		const open = function (onMessage) {
 			const proto = window.location.protocol == 'https:' ? 'wss:' : 'ws:';
 			const ws = new WebSocket(`${proto}//${window.location.host}/ws`);
-			store.dispatch({ type: 'READY_STATE_CHANGE', readyState: ws.readyState });
+			store.dispatch({ type: 'READY_STATE_CHANGE', readyState: readyState(ws) });
 
-			window.ws = ws;
+			if (window) {
+				window['ws'] = ws;
+			}
 
-			readyState = ws.readyState;
 			ws.addEventListener('message', onMessage);
 			ws.addEventListener('close', () => {
 				attempt += 1;
-				store.dispatch({ type: 'READY_STATE_CHANGE', readyState: ws.readyState });
-				setTimeout(() => open(onMessage, attempt), timeout(attempt));
+				store.dispatch({ type: 'READY_STATE_CHANGE', readyState: readyState(ws) });
+				setTimeout(() => open(onMessage), timeout(attempt));
 			});
 			ws.addEventListener('open', () => {
 				attempt = 0;
-				store.dispatch({ type: 'READY_STATE_CHANGE', readyState: ws.readyState });
+				store.dispatch({ type: 'READY_STATE_CHANGE', readyState: readyState(ws) });
 			});
 		}
 		open(onMessage);
@@ -97,17 +176,36 @@ function connect(store) {
 	});
 }
 
+/**
+ *
+ * @typedef {import('redux').Store<State, Action>} Store
+ * @type Store
+ */
+// @ts-ignore Cannot find name Redux
 const store = Redux.createStore(reducer, Redux.applyMiddleware(
 
 	/**
 	 * Network IO
+	 * @typedef { import('redux').Dispatch<Action> } Dispatch
+	 * @typedef { import('redux').MiddlewareAPI<State, Dispatch> } MiddlewareAPI
+	 * @param {MiddlewareAPI} store
+	 * @return {(next: Dispatch) => (action: Action) => Action}
 	 */
-	store => {
+	() => {
+		/**
+		 * @type {{[uuid: string]: {
+		 *  deferred: Promise<*>,
+		 * 	resolve: (value: any | undefined) => void
+		 * }}}
+		 */
 		let pending = {};
 		return next => action => {
 			switch (action.type) {
 				case 'CMD': {
 					ws.send(JSON.stringify(action.descriptor));
+					/**
+					 * @type {?((value: any) => void)}
+					 */
 					let resolve;
 					const deferred =
 						new Promise((inner, reject) => {
@@ -121,16 +219,16 @@ const store = Redux.createStore(reducer, Redux.applyMiddleware(
 								inner(value);
 							};
 						});
-					pending[action.descriptor.uuid] = { deferred, resolve: (value) => resolve(value) };
+					pending[action.descriptor.uuid] = { deferred, resolve: (value) => resolve ? resolve(value) : null };
 					break;
 				}
 				case 'RES': {
 					const deferred = pending[action.descriptor.uuid] || { resolve: () => { } };
-					deferred.resolve();
+					deferred.resolve(undefined);
 					break;
 				}
 				default: {
-					console.log('TYPE', action.type);
+					console.log('TYPE', action.type, action );
 					break;
 				}
 			}
@@ -142,12 +240,16 @@ const store = Redux.createStore(reducer, Redux.applyMiddleware(
 connect(store);
 
 ReactDOM.render(
+	// @ts-ignore Cannot find name ReactRedux
 	e(ReactRedux.Provider, { store }, e(App)),
 	document.querySelector('#app')
 );
 
 
-
+/**
+ * @param {Array<string>} urls
+ * @return {Action}
+ */
 function discover(urls) {
 	const uuid = String(Date.now());
 
@@ -161,6 +263,10 @@ function discover(urls) {
 	};
 }
 
+/**
+ * @typedef { import('redux').Reducer<State, Action>} Reducer
+ * @type Reducer
+ */
 function reducer(state = { readyState: -1, current: null, nodes: [], log: {}, feeds: [], }, action) {
 	switch (action.type) {
 		case 'NODES': {
@@ -198,6 +304,27 @@ function reducer(state = { readyState: -1, current: null, nodes: [], log: {}, fe
 		}
 		default: {
 			return state;
+		}
+	}
+}
+
+/**
+ *
+ * @param {WebSocket} ws
+ * @return {WebSocketReadyState}
+ */
+function readyState(ws) {
+	const state = ws.readyState;
+	switch(state) {
+		case 0:
+		case 1:
+		case 2:
+		case 3: {
+			return state;
+		}
+
+		default: {
+			return -1;
 		}
 	}
 }

@@ -1,0 +1,29 @@
+{
+    "compilerOptions": {
+        "allowJs": true,
+
+        "checkJs": true,
+        "module": "commonjs",
+
+        "noEmit": true,
+        "baseUrl": "src",
+        "rootDir": "src",
+        "jsx": "preserve",
+
+        "moduleResolution": "node",
+
+        "lib": [
+			"ES2015",
+            "DOM"
+        ],
+
+        "strict": true,
+        "strictNullChecks": true,
+
+        "noUnusedLocals": true
+
+    },
+    "include": [
+        "./priv"
+    ]
+}
