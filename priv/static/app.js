@@ -247,7 +247,7 @@ function connect(store) {
 	 * @return number
 	 */
 	function timeout(attempt) {
-		return 200 + Math.min(Math.pow(5, attempt), 10000);
+		return 200 + Math.min(Math.pow(5, attempt), 5000);
 	}
 
 	/**
