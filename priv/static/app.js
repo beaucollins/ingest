@@ -31,6 +31,9 @@
  *  | {type: 'RES', descriptor: Command }
  *  | {type: 'DISCOVER', feeds: Array<Feed> }
  * )} Action
+ *
+ * @typedef { import('redux').Dispatch<Action> } Dispatch
+ * @typedef { import('redux').MiddlewareAPI<Dispatch, State> } MiddlewareAPI
  */
 
 const e = React.createElement;
@@ -105,146 +108,17 @@ const App = ReactRedux.connect(
 
 /**
  *
- * @param {Store} store
- */
-function connect(store) {
-	/**
-	 * @param {number} attempt
-	 * @return number
-	 */
-	function timeout(attempt) {
-		return 200 + Math.min(Math.pow(5, attempt), 10000);
-	}
-
-	/**
-	 *
-	 * @param {(event: MessageEvent) => void} onMessage
-	 */
-	const connection = function (onMessage) {
-		let attempt = 0;
-
-		/**
-		 *
-		 * @param {(event: MessageEvent) => void} onMessage
-		 */
-		const open = function (onMessage) {
-			const proto = window.location.protocol == 'https:' ? 'wss:' : 'ws:';
-			const ws = new WebSocket(`${proto}//${window.location.host}/ws`);
-			store.dispatch({ type: 'READY_STATE_CHANGE', readyState: readyState(ws) });
-
-			if (window) {
-				window['ws'] = ws;
-			}
-
-			ws.addEventListener('message', onMessage);
-			ws.addEventListener('close', () => {
-				attempt += 1;
-				store.dispatch({ type: 'READY_STATE_CHANGE', readyState: readyState(ws) });
-				setTimeout(() => open(onMessage), timeout(attempt));
-			});
-			ws.addEventListener('open', () => {
-				attempt = 0;
-				store.dispatch({ type: 'READY_STATE_CHANGE', readyState: readyState(ws) });
-			});
-		}
-		open(onMessage);
-	};
-
-	connection((event) => {
-		try {
-			const message = JSON.parse(event.data);
-			switch (message.type) {
-				case 'action': {
-					store.dispatch(message.action);
-					break;
-				}
-				case 'result': {
-					store.dispatch({
-						type: 'RES',
-						descriptor: message,
-					});
-					break;
-				}
-				default: {
-					console.warn('unhandled event', message);
-					break;
-				}
-			}
-		} catch (error) {
-			console.error(error);
-		}
-	});
-}
-
-/**
- *
  * @typedef {import('redux').Store<State, Action>} Store
  * @type Store
  */
 // @ts-ignore Cannot find name Redux
-const store = Redux.createStore(reducer, Redux.applyMiddleware(
-
-	/**
-	 * Network IO
-	 * @typedef { import('redux').Dispatch<Action> } Dispatch
-	 * @typedef { import('redux').MiddlewareAPI<State, Dispatch> } MiddlewareAPI
-	 * @param {MiddlewareAPI} store
-	 * @return {(next: Dispatch) => (action: Action) => Action}
-	 */
-	() => {
-		/**
-		 * @type {{[uuid: string]: {
-		 *  deferred: Promise<*>,
-		 * 	resolve: (value: any | undefined) => void
-		 * }}}
-		 */
-		let pending = {};
-		return next => action => {
-			switch (action.type) {
-				case 'CMD': {
-					ws.send(JSON.stringify(action.descriptor));
-					/**
-					 * @type {?((value: any) => void)}
-					 */
-					let resolve;
-					const deferred =
-						new Promise((inner, reject) => {
-							const timer = setTimeout(function () {
-								console.log('rejected');
-								reject(new Error('timeout'));
-							}, 1000);
-
-							resolve = function (value) {
-								clearTimeout(timer);
-								inner(value);
-							};
-						});
-					pending[action.descriptor.uuid] = { deferred, resolve: (value) => resolve ? resolve(value) : null };
-					break;
-				}
-				case 'RES': {
-					const deferred = pending[action.descriptor.uuid] || { resolve: () => { } };
-					deferred.resolve(undefined);
-					break;
-				}
-				default: {
-					console.log('TYPE', action.type, action );
-					break;
-				}
-			}
-			return next(action);
-		};
-	},
-));
-
-connect(store);
+const store = Redux.createStore(reducer, Redux.applyMiddleware(connect));
 
 ReactDOM.render(
 	// @ts-ignore Cannot find name ReactRedux
 	e(ReactRedux.Provider, { store }, e(App)),
 	document.querySelector('#app')
 );
-
 
 /**
  * @param {Array<string>} urls
@@ -327,4 +201,156 @@ function readyState(ws) {
 			return -1;
 		}
 	}
+}
+
+/**
+ * @typedef {(command: Command) => void} Sender
+ *
+ * @type Array<Command>
+ */
+const queue = [];
+/**
+ * @return {Sender}
+ */
+function queuedSend() {
+	return (command) => {
+		queue.push(command);
+	}
+}
+
+/**
+ * @param {WebSocket} ws
+ * @return {Sender}
+ */
+function directSend(ws) {
+	/**
+	 *
+	 * @type {Sender}
+	 */
+	const send = command => {
+		ws.send(JSON.stringify(command));
+	}
+	queue.splice(0, queue.length).forEach(send);
+
+	return send;
+}
+
+/**
+ * @typedef {(next: Dispatch) => (action: Action) => Action} SideEffect
+ *
+ * @param {MiddlewareAPI} store
+ * @return {SideEffect}
+ */
+function connect(store) {
+	/**
+	 * @param {number} attempt
+	 * @return number
+	 */
+	function timeout(attempt) {
+		return 200 + Math.min(Math.pow(5, attempt), 10000);
+	}
+
+	/**
+	 *
+	 * @param {(event: MessageEvent) => void} onMessage
+	 * @return {SideEffect}
+	 */
+	const connection = function (onMessage) {
+		let attempt = 0;
+
+		let send = queuedSend();
+
+		/**
+		 *
+		 * @param {(event: MessageEvent) => void} onMessage
+		 */
+		const open = function (onMessage) {
+			const proto = window.location.protocol == 'https:' ? 'wss:' : 'ws:';
+			const ws = new WebSocket(`${proto}//${window.location.host}/ws`);
+			store.dispatch({ type: 'READY_STATE_CHANGE', readyState: readyState(ws) });
+
+			ws.addEventListener('message', onMessage);
+			ws.addEventListener('close', () => {
+				send = queuedSend();
+				attempt += 1;
+				store.dispatch({ type: 'READY_STATE_CHANGE', readyState: readyState(ws) });
+				setTimeout(() => open(onMessage), timeout(attempt));
+			});
+			ws.addEventListener('open', () => {
+				attempt = 0;
+				store.dispatch({ type: 'READY_STATE_CHANGE', readyState: readyState(ws) });
+				send = directSend(ws);
+			});
+		}
+
+		setTimeout(() => open(onMessage), 0);
+
+		/**
+		 * @type {{[uuid: string]: {
+		 *  deferred: Promise<*>,
+		 * 	resolve: (value: any | undefined) => void
+		 * }}}
+		 */
+		let pending = {};
+		return next => action => {
+			switch (action.type) {
+				case 'CMD': {
+					send(action.descriptor);
+					/**
+					 * @type {?((value: any) => void)}
+					 */
+					let resolve;
+					const deferred =
+						new Promise((inner, reject) => {
+							const timer = setTimeout(function () {
+								console.log('rejected');
+								reject(new Error('timeout'));
+							}, 1000);
+
+							resolve = function (value) {
+								clearTimeout(timer);
+								inner(value);
+							};
+						});
+					pending[action.descriptor.uuid] = { deferred, resolve: (value) => resolve ? resolve(value) : null };
+					break;
+				}
+				case 'RES': {
+					const deferred = pending[action.descriptor.uuid] || { resolve: () => { } };
+					deferred.resolve(undefined);
+					break;
+				}
+				default: {
+					console.log('TYPE', action.type, action );
+					break;
+				}
+			}
+			return next(action);
+		}
+	};
+
+	return connection((event) => {
+		try {
+			const message = JSON.parse(event.data);
+			switch (message.type) {
+				case 'action': {
+					store.dispatch(message.action);
+					break;
+				}
+				case 'result': {
+					store.dispatch({
+						type: 'RES',
+						descriptor: message,
+					});
+					break;
+				}
+				default: {
+					console.warn('unhandled event', message);
+					break;
+				}
+			}
+		} catch (error) {
+			console.error(error);
+		}
+	});
 }
