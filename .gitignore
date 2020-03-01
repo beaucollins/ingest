@@ -24,3 +24,6 @@ ingest-*.tar
 
 # Ignore dialyzer
 .elixir_ls/
+
+# They're everywhere
+node_modules
