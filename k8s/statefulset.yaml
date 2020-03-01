@@ -15,8 +15,7 @@ spec:
     spec:
       containers:
       - name: ingest
-        image: coplusco/ingest:exp
-        imagePullPolicy: Always
+        image: coplusco/ingest:latest
         env:
           - name: RELEASE_DISTRIBUTION
             value: name
