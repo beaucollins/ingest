@@ -1,12 +1,13 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: ingest
 spec:
-  replicas: 4
   selector:
     matchLabels:
       app: ingest
+  serviceName: ingest-cluster
+  replicas: 2
   template:
     metadata:
       labels:
@@ -15,18 +16,13 @@ spec:
       containers:
       - name: ingest
         image: coplusco/ingest:exp
+        imagePullPolicy: Always
         env:
-          - name: POD_IP
-            valueFrom:
-              fieldRef:
-                fieldPath: status.podIP
           - name: RELEASE_DISTRIBUTION
             value: name
           - name: RELEASE_COOKIE
             value: "cookie"
-          - name: NAMESPACE
-            valueFrom:
-              fieldRef:
-                fieldPath: metadata.namespace
         ports:
-        - containerPort: 4000
+        - name: http
+          protocol: TCP
+          containerPort: 4000
