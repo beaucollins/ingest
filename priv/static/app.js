@@ -79,7 +79,7 @@ const App = ReactRedux.connect(
 	 */
 	dispatch => ({
 		onInput: (input) => {
-			dispatch(discover([input]));
+			dispatch(discover(input.split(' ').map(url => url.trim())));
 		},
 		onOpenFeed: (feed) => {
 			dispatch(fetchFeed(feed))

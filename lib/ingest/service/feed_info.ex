@@ -8,37 +8,14 @@ defmodule Ingest.Service.FeedInfo do
   get "/:url" do
     url
     |> URI.decode()
-    |> Ingest.Client.get()
+    |> Ingest.fetch()
     |> case do
-      {:ok, %HTTPoison.Response{body: body, status_code: 200}} ->
-        try do
-          case Ingest.Feed.parse(body) do
-            %{} = feed ->
-              render(conn, "feed.html", %{feed: feed})
-          end
-        rescue
-          e in RuntimeError ->
-            render(conn, "parse_error.html", %{exception: e, body: body})
-        end
-
-      {:ok, %HTTPoison.Response{status_code: status_code, headers: headers}}
-      when status_code >= 300 and status_code < 400 ->
-        case Ingest.Discovery.location(headers) do
-          nil ->
-            render(conn, "fetch_error.html", %{error: "Response #{status_code}", url: url})
-
-          location ->
-            render(conn, "fetch_error.html", %{
-              error: "Response #{status_code} redirect to #{location}",
-              url: url
-            })
-        end
-
-      {:ok, %HTTPoison.Response{status_code: status_code}} ->
-        render(conn, "fetch_error.html", %{error: "Response #{status_code}", url: url})
+      {:ok, feed} when is_map(feed) ->
+        render(conn, "feed.html", %{feed: feed})
 
       {:error, reason} ->
         render(conn, "fetch_error.html", %{error: reason, url: url})
+
     end
   end
 end

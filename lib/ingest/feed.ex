@@ -51,7 +51,13 @@ defmodule Ingest.Feed do
 
   def parse(content) do
     case is_json(content) do
-      false -> Feedraptor.parse(content)
+      false ->
+        try do
+          {:ok, Feedraptor.parse(content)}
+        rescue
+          e in RuntimeError ->
+            {:error, e.message}
+        end
       true -> Ingest.JSONFeed.parse(content)
     end
   end

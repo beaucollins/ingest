@@ -6,9 +6,9 @@ defmodule Ingest.JSONFeed do
       ...> {"hello": "world"}
       ...> \"\"\"
       ...> |> Ingest.JSONFeed.parse()
-      %{"hello" => "world"}
+      {:ok, %{"hello" => "world"}}
   """
   def parse(content) do
-    Jason.decode!(content)
+    Jason.decode(content)
   end
 end

@@ -51,8 +51,12 @@ defmodule Ingest.SocketHandler do
       {:discover, uuid, url, feeds} ->
         reply_discover(uuid, url, feeds, state)
 
+      {:fetchfeed, uuid, _result} ->
+        {:ok, state}
+
       _ ->
         {:ok, state}
+
     end
   end
 
@@ -100,7 +104,7 @@ defmodule Ingest.SocketHandler do
   defp parse_command(data) do
     case Jason.decode(data) do
       {:ok, %{"command" => command, "uuid" => uuid, "args" => args}}
-      when is_binary(command) and is_list(args) ->
+      when is_binary(command) ->
         {:ok, [command: command, uuid: uuid, args: args]}
 
       {:ok, %{"command" => command, "args" => args}} when is_binary(command) and is_list(args) ->
@@ -120,7 +124,7 @@ defmodule Ingest.SocketHandler do
     end
   end
 
-  defp run_command(command, uuid, args \\ [])
+  defp run_command(command, uuid, args)
 
   defp run_command("discover", uuid, urls) do
     pid = self()
@@ -137,6 +141,19 @@ defmodule Ingest.SocketHandler do
      %{
        "tasks" => Enum.map(tasks, fn task -> inspect(task.pid) end)
      }}
+  end
+
+  defp run_command("fetchfeed", uuid, feed) do
+    case Map.fetch(feed, "url") do
+      {:ok, url} ->
+        pid = self()
+        task = Task.async(fn ->
+          send(pid, {:fetchfeed, uuid, Ingest.fetch(url)})
+        end)
+        {:reply, uuid, %{"task" => inspect(task.pid)}}
+      :error ->
+        {:error, uuid, %{"reason" => :invalid_command, "uuid" => uuid}}
+    end
   end
 
   defp run_command(command, uuid, _args) do
