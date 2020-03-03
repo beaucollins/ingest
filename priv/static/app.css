@@ -44,13 +44,28 @@ body {
 	flex-direction: column;
 }
 
+#search-results {
+	flex: 1 0;
+	overflow: auto;
+}
+
 #search-field {
 	display: flex;
 	flex: 0 0 auto;
+	padding: 8px;
+	align-items: stretch;
 }
 
 #search-field input {
 	flex: 1;
+}
+
+#search-field button {
+	padding: 8px;
+	border-radius: 2px;
+	background: #666;
+	border: none;
+	color: white;
 }
 
 #status {

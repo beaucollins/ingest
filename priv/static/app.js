@@ -256,7 +256,7 @@ function Reader({
 }) {
 	const [search, setSearch] = React.useState('');
 	const sendInput = () => {
-		if (search.match(/^[\s]{}$/) == null) {
+		if (search.match(/^[\s]{0,}$/) == null) {
 			onInput(search);
 			setSearch('');
 		}
@@ -292,12 +292,14 @@ function Reader({
 						onClick: preventDefault(sendInput)
 					}, '→'),
 				),
-				e('ul', { style: { display: 'flex', flexDirection: 'column-reverse' } },
-					Object.keys(log).map(uuid => e('li', { key: uuid }, e(React.Fragment, {}, [uuid, ' - ', log[uuid].res[0]], ' - ', JSON.stringify(log[uuid].res[1]))))
-				),
-				e('ul', { style: { display: 'flex', flexDirection: 'column-reverse' } },
-					feeds.map((feed, i) => e('li', { key: i }, e(FeedItem, {feed, onOpenFeed})))
-				),
+				e('div', {id: 'search-results'},
+					e('ul', { style: { display: 'flex', flexDirection: 'column-reverse' } },
+						Object.keys(log).map(uuid => e('li', { key: uuid }, e(React.Fragment, {}, [uuid, ' - ', log[uuid].res[0]], ' - ', JSON.stringify(log[uuid].res[1]))))
+					),
+					e('ul', { style: { display: 'flex', flexDirection: 'column-reverse' } },
+						feeds.map((feed, i) => e('li', { key: i }, e(FeedItem, {feed, onOpenFeed})))
+					),
+				)
 			),
 			e('div', {id: 'status', className: readyState === 1 ? 'connected' : 'disconneted' },
 				e('span', { key: 'conn', title: `Ready State: ${readyState}` }, readyState === 1 && current ? `Connected to ${current}.` : 'Not connected.'),

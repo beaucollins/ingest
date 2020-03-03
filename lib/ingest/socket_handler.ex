@@ -177,7 +177,6 @@ defmodule Ingest.SocketHandler do
   end
 
   defp reply_fetchfeed(uuid, feed, state) do
-    IO.inspect(feed, label: "Reply feed")
     {:reply,
      {:text,
       Jason.encode!(%{
