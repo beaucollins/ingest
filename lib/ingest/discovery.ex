@@ -13,7 +13,7 @@ defmodule Ingest.Discovery do
         find_feed(url)
       end)
     end)
-    |> Enum.map(&Task.await/1)
+    |> Enum.map(&Task.await(&1, 15000))
     |> List.flatten()
   end
 

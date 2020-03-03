@@ -26,14 +26,13 @@ defmodule Ingest.Sanitize do
 
       node ->
         :mochiweb_html.to_html(node)
-      end)
+    end)
     |> to_string()
   end
 
   def parse(content) do
     ("<Fragment>" <> content)
     |> Traverse.parse()
-
   end
 
   def sanitize(content) do

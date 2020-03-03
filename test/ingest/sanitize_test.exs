@@ -24,10 +24,12 @@ defmodule Ingest.SanitizeTest do
   end
 
   test "mochiweb_html failure" do
-    html = "<br/><br/><p><small><bad><a href=\"#\"><br/>1</a> | <a href=\"#\">2</a> | <a href=\"#\">3</a> | <a href=\"#\">4</a> | <a href=\"#\">5</a> | <a href=\"#\">6</a></bad></small><br/></p></blockquote>"
+    html =
+      "<br/><br/><p><small><bad><a href=\"#\"><br/>1</a> | <a href=\"#\">2</a> | <a href=\"#\">3</a> | <a href=\"#\">4</a> | <a href=\"#\">5</a> | <a href=\"#\">6</a></bad></small><br/></p></blockquote>"
 
     document = Ingest.Sanitize.sanitize_html(html)
 
-    assert document === "<br /><br /><p><small><a href=\"#\"><br />1</a> | <a href=\"#\">2</a> | <a href=\"#\">3</a> | <a href=\"#\">4</a> | <a href=\"#\">5</a> | <a href=\"#\">6</a></small><br /></p>"
+    assert document ===
+             "<br /><br /><p><small><a href=\"#\"><br />1</a> | <a href=\"#\">2</a> | <a href=\"#\">3</a> | <a href=\"#\">4</a> | <a href=\"#\">5</a> | <a href=\"#\">6</a></small><br /></p>"
   end
 end

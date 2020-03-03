@@ -20,7 +20,7 @@
 			<% end %>
 			</ul>
 		<% _ -> %>
-			<strong>Error</strong>
+			<strong>Error: <%= feeds%> </strong>
 		<% end %>
 	</div>
 </section>

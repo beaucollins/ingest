@@ -58,7 +58,9 @@ defmodule Ingest.Feed do
           e in RuntimeError ->
             {:error, e.message}
         end
-      true -> Ingest.JSONFeed.parse(content)
+
+      true ->
+        Ingest.JSONFeed.parse(content)
     end
   end
 
@@ -67,5 +69,12 @@ defmodule Ingest.Feed do
     |> String.slice(0, 10)
     |> String.trim()
     |> String.starts_with?("{")
+  end
+end
+
+# Feedraptor.parse errantly includes a tuple for title: when title is not present
+defimpl Jason.Encoder, for: Tuple do
+  def encode(tuple, opts) do
+    Jason.Encode.list(Tuple.to_list(tuple), opts)
   end
 end

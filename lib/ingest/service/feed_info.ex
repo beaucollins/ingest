@@ -15,7 +15,6 @@ defmodule Ingest.Service.FeedInfo do
 
       {:error, reason} ->
         render(conn, "fetch_error.html", %{error: reason, url: url})
-
     end
   end
 end

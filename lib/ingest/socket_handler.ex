@@ -51,12 +51,11 @@ defmodule Ingest.SocketHandler do
       {:discover, uuid, url, feeds} ->
         reply_discover(uuid, url, feeds, state)
 
-      {:fetchfeed, uuid, _result} ->
-        {:ok, state}
+      {:fetchfeed, uuid, feeds} ->
+        reply_fetchfeed(uuid, feeds, state)
 
       _ ->
         {:ok, state}
-
     end
   end
 
@@ -144,13 +143,16 @@ defmodule Ingest.SocketHandler do
   end
 
   defp run_command("fetchfeed", uuid, feed) do
-    case Map.fetch(feed, "url") do
-      {:ok, url} ->
-        pid = self()
-        task = Task.async(fn ->
-          send(pid, {:fetchfeed, uuid, Ingest.fetch(url)})
-        end)
-        {:reply, uuid, %{"task" => inspect(task.pid)}}
+    pid = self()
+    result = with {:ok, url} <- Map.fetch(feed, "url"),
+        {:ok, host} <- Map.fetch(feed, "host"),
+        do: {:ok, Task.async(fn ->
+              send(pid, {:fetchfeed, uuid, URI.merge(host, url) |> Ingest.fetch})
+            end)}
+
+    case result do
+      {:ok, task} ->
+        {:reply, uuid, %{ "task" => inspect(task)}}
       :error ->
         {:error, uuid, %{"reason" => :invalid_command, "uuid" => uuid}}
     end
@@ -170,6 +172,20 @@ defmodule Ingest.SocketHandler do
           "uuid" => uuid,
           "url" => url,
           "feeds" => Tuple.to_list(feeds)
+        }
+      })}, state}
+  end
+
+  defp reply_fetchfeed(uuid, feed, state) do
+    IO.inspect(feed, label: "Reply feed")
+    {:reply,
+     {:text,
+      Jason.encode!(%{
+        "type" => "action",
+        "action" => %{
+          "type" => "FETCH_FEED_RESULT",
+          "uuid" => uuid,
+          "feed" => Tuple.to_list(feed)
         }
       })}, state}
   end

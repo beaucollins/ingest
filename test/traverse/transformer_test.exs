@@ -45,18 +45,24 @@ defmodule Traverse.TransformerTest do
   end
 
   test "select_children" do
-    fragment = { "div", [], [
-      {"bad", [], [
-        {"p", [], []}
-      ]}
-    ] }
+    fragment =
+      {"div", [],
+       [
+         {"bad", [],
+          [
+            {"p", [], []}
+          ]}
+       ]}
 
-    transformed = Traverse.Transformer.map(fragment, Traverse.Transformer.transform(
-      Traverse.Matcher.element_name_is("bad"),
-      Traverse.Transformer.select_children()
-    ))
+    transformed =
+      Traverse.Transformer.map(
+        fragment,
+        Traverse.Transformer.transform(
+          Traverse.Matcher.element_name_is("bad"),
+          Traverse.Transformer.select_children()
+        )
+      )
 
     assert transformed == {"div", [], [{"p", [], []}]}
-
   end
 end
