@@ -1,4 +1,10 @@
 /**
+ * @typedef {import('reselect')}
+ * @typedef {import('redux')}
+ * @typedef {import('react-redux')}
+ */
+
+/**
  * @typedef {{
  *  title: string,
  *  host: string,
@@ -55,13 +61,16 @@
  * }} Post
  *
  * @typedef {{[guid: string]: Post}} Posts
+ * @typedef {{[uuid: string]: LogEntry}} Log
+ * @typedef {Array<FeedDiscoveryResult>} Feeds
+ * @typedef {Array<string>} Nodes
  *
  * @typedef {{
  *   current: ?string
- *   nodes: Array<string>
+ *   nodes: Nodes
  *   readyState: WebSocketReadyState
- *   log: {[uuid: string]: LogEntry}
- *   feeds: Array<FeedDiscoveryResult>
+ *   log: Log
+ *   feeds: Feeds
  * 	 posts: Posts
  *   selectedPost?: ?Post
  * }} State
@@ -87,6 +96,11 @@
  * @typedef { import('redux').Dispatch<Action> } Dispatch
  * @typedef { import('redux').MiddlewareAPI<Dispatch, State> } MiddlewareAPI
  */
+
+/**
+ * Alias to React.createElement
+ */
+// @ts-ignore
 const e = React.createElement;
 
 /**
@@ -97,29 +111,70 @@ const e = React.createElement;
 const queue = {};
 
 /**
- * @type {React.FunctionComponent<{posts: Posts, onOpenPost:(post: Post) => void}>}
+ * @type {React.FunctionComponent<{posts: Array<Post>, onOpenPost:(post: Post) => void}>}
  */
 const FeedItems = ({posts, onOpenPost}) =>
 	e(React.Fragment, {},
-		Object.keys(posts).length === 0
+		posts.length === 0
 			? e( 'div', {id: 'posts-notice'}, e('div', {}, 'No posts'))
-			: e( 'div', {id: 'post-list'}, Object.keys(posts).map(key => e(Post, {key, post: posts[key], onOpenPost})))
+			: e( 'div', {id: 'post-list'}, posts.map(post => e(PostListItem, {key: post.entry_id, post: post, onOpenPost})))
 	);
+
+/**
+ *
+ * @type {React.FunctionComponent<{isoDate: string}>}
+ */
+const DateFormatted = ({isoDate}) => {
+	const date = new Date(isoDate);
+	const localized = Intl.DateTimeFormat(navigator.language, {
+		month: 'long',
+		year: 'numeric',
+		day: 'numeric',
+		hour: 'numeric',
+		minute: '2-digit'
+	}).format(date);
+	return e('span', {title: isoDate}, localized);
+}
+
+
+/**
+ * @param {any} value
+ * @param {number} size
+ * @param {string} character
+ * @param {('append'|'prepend')} mode
+ */
+function pad(value, size, character = ' ', mode = 'append') {
+	let output = String(value);
+	/**
+	 *
+	 * @type {(v: string, c:string) => string}
+	 */
+	const update = mode === 'append' ? (v, c) => v.concat(c) : (v, c) => c.concat(v);
+	while (output.length < size) {
+		output = update(output, character);
+	}
+	return output;
+}
 
 /**
  *
  * @type React.FunctionComponent<{post: Post, onOpenPost:(post: Post) => void}>
  */
-const Post = ({post, onOpenPost}) => e('div', {
-	className: 'post-entry',
-	/**
-	 * @param {React.MouseEvent<HTMLDivElement>} e
-	 */
-	onClick: (e) => {
-		e.preventDefault();
-		onOpenPost(post);
-	}
-}, post.title);
+const PostListItem = ({post, onOpenPost}) => e(
+	'div',
+	{
+		className: 'post-list-item',
+		/**
+		 * @param {React.MouseEvent<HTMLDivElement>} e
+		 */
+		onClick: (e) => {
+			e.preventDefault();
+			onOpenPost(post);
+		}
+	},
+	e('div', { className: 'post-list-item__title' }, post.title),
+	e('div', { className: 'post-list-item__publish-date text--secondary' }, e(DateFormatted, { isoDate: post.published })),
+);
 
 /**
  * @template T
@@ -169,7 +224,10 @@ const PostDetail = ({post, onClosePost}) => e('div', {className: 'post-detail'},
 	),
 	e('div', {className: 'post-detail__header'},
 		e('div', {className: 'post-detail__title'}, post.title),
-		e('div', {className: 'post-detail__meta'}, 'Meta here')
+		e('div', {className: 'post-detail__meta'},
+			e('span', {className: 'post-detail__meta-author'}, post.author),
+			e('span', {className: 'post-detail__meta-publish-date text--secondary'}, e(DateFormatted, {isoDate: post.published}))
+		)
 	),
 	e('div', {className: 'post-detail__content'},
 		e('div', {dangerouslySetInnerHTML: {
@@ -178,16 +236,39 @@ const PostDetail = ({post, onClosePost}) => e('div', {className: 'post-detail'},
 	)
 );
 
+/*
+ * @type {import('reselect').Selector<State, Array<Post>>}
+ */
+const postList = Reselect.createSelector(
+	/**
+	 * @param {State} state
+	 * @return {Posts}
+	 */
+	state => state.posts,
+	/**
+	 * @param {Posts} posts
+	 * @return {Array<Post>}
+	 */
+	posts => Object.values(posts).sort((a, b) => new Date(a.published) > new Date(b.published) ? -1 : 1)
+)
+
 /**
  * @type React.FunctionComponent<Omit<Props, keyof(StateProps & DispatchProps)>>
  */
-// @ts-ignore Cannot find name ReactRedux
+// @ts-ignore
 const App = ReactRedux.connect(
 	/**
 	 * @param {State} state
-	 * @return StateProps
+	 * @return {StateProps}
 	 */
-	state => state,
+	state => {
+		const { posts, selectedPost, ...rest } = state;
+		return {
+			...rest,
+			selectedPost,
+			posts: postList(state)
+		};
+	},
 	/**
 	 * @param {Dispatch} dispatch
 	 * @return {DispatchProps}
@@ -215,8 +296,7 @@ const App = ReactRedux.connect(
  */
 // @ts-ignore Cannot find name Redux
 const store = Redux.createStore(reducer, readDebugState(), Redux.applyMiddleware(
-	connect,
-	actionLogger,
+	connect
 ));
 
 ReactDOM.render(
@@ -248,7 +328,15 @@ ReactDOM.render(
  *   onOpenPost: (post?: Post) => void
  * 	 onClosePost: () => void
  * }} DispatchProps
- * @typedef {State} StateProps
+ * @typedef {{
+ *  log: Log
+ *  readyState: WebSocketReadyState
+ *  nodes: Nodes
+ *  current: ?string
+ *  feeds: Feeds,
+ *  posts: Array<Post>
+ *  selectedPost?: ?Post
+ * }} StateProps
  *
  * @typedef {{}} SelfProps
  *
@@ -434,7 +522,7 @@ function reducer(state = { readyState: -1, current: null, nodes: [], log: {}, fe
  * @param {WebSocket} ws
  * @return {WebSocketReadyState}
  */
-function readyState(ws) {
+function getReadyState(ws) {
 	const state = ws.readyState;
 	switch(state) {
 		case 0:
@@ -533,12 +621,12 @@ function connect(store) {
 		ws.addEventListener('close', () => {
 			send = queuedSend();
 			attempt += 1;
-			store.dispatch({ type: 'READY_STATE_CHANGE', readyState: readyState(ws) });
+			store.dispatch({ type: 'READY_STATE_CHANGE', readyState: getReadyState(ws) });
 			setTimeout(() => open(), timeout(attempt));
 		});
 		ws.addEventListener('open', () => {
 			attempt = 0;
-			store.dispatch({ type: 'READY_STATE_CHANGE', readyState: readyState(ws) });
+			store.dispatch({ type: 'READY_STATE_CHANGE', readyState: getReadyState(ws) });
 			send = directSend(ws);
 		});
 	}
@@ -575,7 +663,7 @@ const FeedItem = ({feed, onOpenFeed}) => {
 				 * @return {Array<React.ReactNode>}
 				 */
 				(children, feed) =>
-					children.concat(children.length > 0 ? ', ' : '', e('a', {title: feed.url, href: '#', onClick: preventDefault(onOpenFeed.bind(null, feed))}, feed.title)),
+					children.concat(children.length > 0 ? ', ' : '', e('a', {key: feed.url, title: feed.url, href: '#', onClick: preventDefault(onOpenFeed.bind(null, feed))}, feed.title)),
 				[],
 			));
 		}
@@ -597,49 +685,6 @@ const FeedItem = ({feed, onOpenFeed}) => {
  */
 function oneOf(...options) {
 	return option => options.indexOf(option) !== -1;
-}
-
-/**
- * @type {import('redux').Middleware<{}, State, Dispatch>}
- */
-function actionLogger(store) {
-	// @ts-ignore
-	window.store = store;
-	// @ts-ignore
-	window.resetApp = () => {
-		localStorage.removeItem('debug-state');
-		window.location.reload();
-	}
-	// @ts-ignore
-	window.reloadApp = () => {
-		const state = store.getState();
-		/**
-		 * @type Array<keyof State>
-		 */
-		// @ts-ignore
-		const keys = Object.keys(state);
-		const selector = oneOf('posts', 'selectedPost');
-		/**
-		 * @type Partial<State>
-		 */
-		const partial = keys.filter(selector).reduce(
-			(p, key) => ({...p, [key]: state[key]}),
-			{}
-		);
-		localStorage.setItem('debug-state', JSON.stringify(partial));
-		window.location.reload();
-	}
-	return next => action => {
-		const label = `Redux: ${action.type}`;
-		console.groupCollapsed(label);
-		console.log('Action', action);
-		console.log('State Before', store.getState());
-		const result = next(action);
-		console.log('State After', store.getState());
-		console.log('Dispath Result', result);
-		console.groupEnd();
-		return result;
-	}
 }
 
 /**
