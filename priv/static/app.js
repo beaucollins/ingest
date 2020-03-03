@@ -47,7 +47,8 @@
  *  title: string
  *  url: string
  *  entry_id: string
- *  content: string
+ *  content?: string
+ *  summary?: string
  *  published: string
  *  categories: Array<string>
  *  author: string
@@ -145,6 +146,19 @@ function sanitize(dirty) {
 }
 
 /**
+ *
+ * @param {Post} post
+ * @return {string}
+ */
+function sanitizePost(post) {
+	const content = post.content ? post.content : post.summary;
+	if (content == null) {
+		return "";
+	}
+	return sanitize(content);
+}
+
+/**
  * @type React.FunctionComponent<{post: Post, onClosePost:() => void}>
  */
 const PostDetail = ({post, onClosePost}) => e('div', {className: 'post-detail'},
@@ -159,7 +173,7 @@ const PostDetail = ({post, onClosePost}) => e('div', {className: 'post-detail'},
 	),
 	e('div', {className: 'post-detail__content'},
 		e('div', {dangerouslySetInnerHTML: {
-			__html: sanitize(post.content)
+			__html: sanitizePost(post)
 		}}),
 	)
 );
