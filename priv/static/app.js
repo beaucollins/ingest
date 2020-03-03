@@ -149,7 +149,7 @@ function sanitize(dirty) {
  */
 const PostDetail = ({post, onClosePost}) => e('div', {className: 'post-detail'},
 	e('div', {className: 'post-detail__nav-bar'},
-		e('a', {href: '#', onClick: preventDefault(onClosePost)},
+		e('a', {className: 'post-detail__back control_button', href: '#', onClick: preventDefault(onClosePost)},
 			'Back'
 		)
 	),
@@ -285,6 +285,7 @@ function Reader({
 						}
 					}),
 					e('button', {
+						className: 'control_button',
 						tabIndex: 0,
 						/**
 						 * @param {React.MouseEvent<HTMLButtonElement>} e
