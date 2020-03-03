@@ -15,7 +15,7 @@ defmodule Ingest.Service.DiscoverTest do
     assert conn.resp_body
            |> Traverse.query_all(has_class_name("site-feeds"))
            |> Traverse.to_string() ==
-             ~s[<section class="site-feeds"><div><strong>Error</strong></div></section>]
+             ~s[<section class="site-feeds"><div><strong>Error: missing_url</strong></div></section>]
   end
 
   test "GET with url" do
