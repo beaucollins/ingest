@@ -253,6 +253,19 @@ const postList = Reselect.createSelector(
 )
 
 /**
+ *
+ * @type {React.FunctionComponent<{nodes: Nodes, readyState: WebSocketReadyState, current: ?string}>}
+ */
+const Status = ({nodes, readyState, current}) => (
+	e('div', {id: 'status', className: readyState === 1 ? 'connected' : 'disconneted' },
+		e('span', { key: 'conn', title: `Ready State: ${readyState}` }, readyState === 1 && current ? `Connected to ${current}.` : 'Not connected.'),
+		' ',
+		e('span', { key: 'hosts', title: nodes.reduce((title, node) => title.concat(title === '' ? '' : ', ', node), '' ) },  `${nodes.length} host${nodes.length === 1 ? '' : 's'}`),
+		'.'
+	)
+);
+
+/**
  * @type React.FunctionComponent<Omit<Props, keyof(StateProps & DispatchProps)>>
  */
 // @ts-ignore
@@ -363,6 +376,18 @@ function Reader({
 			setSearch('');
 		}
 	}
+
+	React.useEffect(() => {
+		if (selectedPost) {
+			document.body.classList.add('app-mode-detail');
+		} else {
+			document.body.classList.remove('app-mode-detail');
+		}
+		return () => {
+			document.body.classList.remove('app-mode-detail');
+		}
+	}, [selectedPost]);
+
 	return e(React.Fragment, {},
 		e('div', { id: 'source' },
 			e('div', {id: 'search'},
@@ -404,16 +429,11 @@ function Reader({
 					),
 				)
 			),
-			e('div', {id: 'status', className: readyState === 1 ? 'connected' : 'disconneted' },
-				e('span', { key: 'conn', title: `Ready State: ${readyState}` }, readyState === 1 && current ? `Connected to ${current}.` : 'Not connected.'),
-				' ',
-				e('span', { key: 'hosts', title: nodes.reduce((title, node) => title.concat(title === '' ? '' : ', ', node), '' ) },  `${nodes.length} host${nodes.length === 1 ? '' : 's'}`),
-				'.'
-			),
+			e(Status, {nodes, readyState, current})
 		),
-		e('div', { id: 'main'}, selectedPost
-			? e(PostDetail, {post: selectedPost, onClosePost: onOpenPost})
-			: e(FeedItems, {posts, onOpenPost})
+		e('div', { id: 'main'},
+			selectedPost ? e(PostDetail, {post: selectedPost, onClosePost: onOpenPost}) : null,
+			e(FeedItems, {posts, onOpenPost}),
 		)
 	);
 }
