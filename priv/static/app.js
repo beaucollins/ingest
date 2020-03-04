@@ -28,7 +28,7 @@
  *  req: Command,
  *  res: (
  *    | ['pending', number]
- *    | ['ack', CommandResult]
+ *    | ['ack', number, CommandResult]
  * 	),
  * }} LogEntry
  *
@@ -82,6 +82,7 @@
  * @typedef {{type: 'DISCOVER', feeds: FeedDiscoveryResult }} DiscoverAction
  * @typedef {{type: 'FETCH_FEED_RESULT', uuid: string, feed: FeedFetchResult}} FeedFetchResultAction
  * @typedef {{type: 'SET_POST', post?: Post }} SetOpenPostAction
+ * @typedef {{type: 'CLEAR_LOGS'}} ClearLogsAction
  *
  * @typedef {(
  *  | ReadyStateChangeAction
@@ -91,6 +92,7 @@
  *  | DiscoverAction
  *  | FeedFetchResultAction
  *  | SetOpenPostAction
+ *  | ClearLogsAction
  * )} Action
  *
  * @typedef { import('redux').Dispatch<Action> } Dispatch
@@ -164,13 +166,7 @@ const PostListItem = ({post, onOpenPost}) => e(
 	'div',
 	{
 		className: 'post-list-item',
-		/**
-		 * @param {React.MouseEvent<HTMLDivElement>} e
-		 */
-		onClick: (e) => {
-			e.preventDefault();
-			onOpenPost(post);
-		}
+		onClick: preventDefault(onOpenPost.bind(null, post))
 	},
 	e('div', { className: 'post-list-item__title' }, post.title),
 	e('div', { className: 'post-list-item__publish-date text--secondary' }, e(DateFormatted, { isoDate: post.published })),
@@ -188,30 +184,28 @@ function preventDefault(fn) {
 	}
 }
 
-/**
- * @param {string} dirty
- * @return {string}
- */
-function sanitize(dirty) {
-	// @ts-ignore
-	return sanitizeHtml(dirty, {
-		// @ts-ignore
-		allowedTags: sanitizeHtml.defaults.allowedTags.concat([ 'img' ])
-	});
-}
+// @ts-ignore
+const loader = import('https://unpkg.com/sanitize-html@1.22.0/dist/sanitize-html.js');
 
-/**
- *
- * @param {Post} post
- * @return {string}
- */
-function sanitizePost(post) {
-	const content = post.content ? post.content : post.summary;
-	if (content == null) {
-		return "";
-	}
-	return sanitize(content);
-}
+const SanitizedHtml = React.lazy(() => loader.then(() => ({
+	/**
+	 * @type React.ComponentType<{content?: ?string}>
+	 */
+	default: ({content}) => (
+		content
+		? e('div', {
+			dangerouslySetInnerHTML: {
+				// @ts-ignore
+				__html: sanitizeHtml(
+					content,
+					// @ts-ignore
+					{ allowedTags: sanitizeHtml.defaults.allowedTags.concat([ 'img' ]) }
+				)
+			}
+		})
+		: e('div', {}, 'No content.')
+	)
+})));
 
 /**
  * @type React.FunctionComponent<{post: Post, onClosePost:() => void}>
@@ -230,9 +224,7 @@ const PostDetail = ({post, onClosePost}) => e('div', {className: 'post-detail'},
 		)
 	),
 	e('div', {className: 'post-detail__content'},
-		e('div', {dangerouslySetInnerHTML: {
-			__html: sanitizePost(post)
-		}}),
+		e(React.Suspense, { fallback: e('div', {}, 'Loading')}, e(SanitizedHtml, {content: post.content ? post.content : post.summary}))
 	)
 );
 
@@ -264,6 +256,49 @@ const Status = ({nodes, readyState, current}) => (
 		'.'
 	)
 );
+
+/**
+ * @type {React.FunctionComponent<{onInput:(value: string) => void}>}
+ */
+const SearchField = ({onInput}) => {
+	const [search, setSearch] = React.useState('');
+	const sendInput = () => {
+		if (search.match(/^[\s]{0,}$/) == null) {
+			onInput(search);
+			setSearch('');
+		}
+	}
+
+	return (
+		e('div', {id: 'search-field'},
+			e('input', {
+				type: 'text',
+				key: 'input',
+				value: search,
+				spellCheck: false,
+				onChange: (e) => {
+					setSearch(e.currentTarget.value);
+				},
+				onKeyPress: (e) => {
+					switch (e.which) {
+						case 13: {
+							sendInput();
+							break;
+						}
+					}
+				}
+			}),
+			e('button', {
+				className: 'control_button',
+				tabIndex: 0,
+				/**
+				 * @param {React.MouseEvent<HTMLButtonElement>} e
+				 */
+				onClick: preventDefault(sendInput)
+			}, '→'),
+		)
+	);
+}
 
 /**
  * @type React.FunctionComponent<Omit<Props, keyof(StateProps & DispatchProps)>>
@@ -298,6 +333,9 @@ const App = ReactRedux.connect(
 		},
 		onClosePost: () => {
 			dispatch(closePost());
+		},
+		onClearLogs: () => {
+			dispatch(clearLogs());
 		}
 	})
 )(Reader);
@@ -305,7 +343,7 @@ const App = ReactRedux.connect(
 /**
  *
  * @typedef {import('redux').Store<State, Action>} Store
- * @type Store
+ * @type {Store}
  */
 // @ts-ignore Cannot find name Redux
 const store = Redux.createStore(reducer, readDebugState(), Redux.applyMiddleware(
@@ -320,6 +358,28 @@ ReactDOM.render(
 	),
 	document.querySelector('#app')
 );
+
+/**
+ * Side effect for setting the document.body class.
+ *
+ * @param {null | undefined | Post} selectedPost
+ * @return {void}
+ */
+function setBodyClass(selectedPost) {
+	React.useEffect(() => {
+		if (!document || ! document.body) {
+			return;
+		}
+		if (selectedPost) {
+			document.body.classList.add('app-mode-detail');
+		} else {
+			document.body.classList.remove('app-mode-detail');
+		}
+		return () => {
+			document.body.classList.remove('app-mode-detail');
+		}
+	}, [selectedPost]);
+}
 
 /**
  * @typedef {-1} WebSocketUnknown
@@ -340,6 +400,7 @@ ReactDOM.render(
  *   onOpenFeed: (feed: FeedDiscovery) => void
  *   onOpenPost: (post?: Post) => void
  * 	 onClosePost: () => void
+ *   onClearLogs: () => void
  * }} DispatchProps
  * @typedef {{
  *  log: Log
@@ -368,66 +429,27 @@ function Reader({
 	onInput,
 	onOpenFeed,
 	onOpenPost,
+	onClearLogs,
 }) {
-	const [search, setSearch] = React.useState('');
-	const sendInput = () => {
-		if (search.match(/^[\s]{0,}$/) == null) {
-			onInput(search);
-			setSearch('');
-		}
-	}
-
-	React.useEffect(() => {
-		if (selectedPost) {
-			document.body.classList.add('app-mode-detail');
-		} else {
-			document.body.classList.remove('app-mode-detail');
-		}
-		return () => {
-			document.body.classList.remove('app-mode-detail');
-		}
-	}, [selectedPost]);
+	setBodyClass(selectedPost);
 
 	return e(React.Fragment, {},
 		e('div', { id: 'source' },
 			e('div', {id: 'search'},
-				e('div', {id: 'search-field'},
-					e('input', {
-						type: 'text',
-						key: 'input',
-						value: search,
-						autoComplete: 'off',
-						autoCorrect: 'off',
-						autoCapitalize: 'off',
-						onChange: (e) => {
-							setSearch(e.currentTarget.value);
-						},
-						onKeyPress: (e) => {
-							switch (e.which) {
-								case 13: {
-									sendInput();
-									break;
-								}
-							}
-						}
-					}),
-					e('button', {
-						className: 'control_button',
-						tabIndex: 0,
-						/**
-						 * @param {React.MouseEvent<HTMLButtonElement>} e
-						 */
-						onClick: preventDefault(sendInput)
-					}, '→'),
-				),
+				e(SearchField, { onInput }),
 				e('div', {id: 'search-results'},
-					e('ul', { style: { display: 'flex', flexDirection: 'column-reverse' } },
-						Object.keys(log).map(uuid => e('li', { key: uuid }, e(React.Fragment, {}, [uuid, ' - ', log[uuid].res[0]], ' - ', JSON.stringify(log[uuid].res[1]))))
-					),
 					e('ul', { style: { display: 'flex', flexDirection: 'column-reverse' } },
 						feeds.map((feed, i) => e('li', { key: i }, e(FeedItem, {feed, onOpenFeed})))
 					),
-				)
+					e('ul', { style: { display: 'flex', flexDirection: 'column-reverse' } },
+						Object.keys(log).map(uuid => e('li', { key: uuid }, e(React.Fragment, {}, [uuid, ' - ', log[uuid].res[0]], ' - ', log[uuid].req.command)))
+					),
+					feeds.length + Object.keys(log).length > 0
+						? e('div', { style: { padding: '8px', display: 'flex', flexDirection: 'row', justifyContent: 'center', borderBottom: '1px solid var(--color-chrome)'} },
+							e('a', {href: '#', onClick: preventDefault(onClearLogs), class: 'control_button'}, 'Clear')
+						)
+						: null
+				),
 			),
 			e(Status, {nodes, readyState, current})
 		),
@@ -467,74 +489,6 @@ function command(descriptor) {
 		type: 'CMD',
 		descriptor,
 	};
-}
-
-/**
- * @typedef { import('redux').Reducer<State, Action>} Reducer
- * @type Reducer
- */
-function reducer(state = { readyState: -1, current: null, nodes: [], log: {}, feeds: [], posts: {} }, action) {
-	switch (action.type) {
-		case 'NODES': {
-			return { ...state, current: action.nodes.current, nodes: action.nodes.nodes };
-		}
-		case 'READY_STATE_CHANGE': {
-			return { ...state, readyState: action.readyState };
-		}
-		case 'CMD': {
-			return {
-				...state,
-				log: {
-					...state.log,
-					[action.descriptor.uuid]: { req: action.descriptor, res: ['pending', Date.now()] },
-				},
-			}
-		}
-		case 'RES': {
-			return {
-				...state,
-				log: {
-					...state.log,
-					[action.descriptor.uuid]: {
-						...state.log[action.descriptor.uuid],
-						res: ['ack', action.descriptor],
-					}
-				}
-			};
-		}
-		case 'DISCOVER': {
-			return {
-				...state,
-				feeds: state.feeds.concat([action.feeds])
-			};
-		}
-		case 'FETCH_FEED_RESULT': {
-			switch(action.feed[0]) {
-				case 'ok': {
-					const feed = action.feed[1];
-					return {
-						...state,
-						posts: feed.entries.reduce(
-							(posts, post) => (
-								{...posts, [post.entry_id]: post}
-							),
-							state.posts
-						)
-					}
-				}
-			}
-			return state;
-		}
-		case 'SET_POST': {
-			return {
-				...state,
-				selectedPost: action.post
-			}
-		}
-		default: {
-			return state;
-		}
-	}
 }
 
 /**
@@ -579,7 +533,7 @@ function directSend(ws) {
 		const deferred = { command: command, resolve: () => {}}
 		queue[command.uuid] = deferred;
 		/**
-		 * @type Promise<CommandResult>
+		 * @type {Promise<CommandResult>}
 		 */
 		const promise = new Promise((resolve) => {
 			deferred.resolve = resolve;
@@ -670,7 +624,7 @@ function connect(store) {
 
 /**
  * @typedef {{feed: FeedDiscoveryResult, onOpenFeed:(feed: FeedDiscovery) => void}} FeedItemProps
- * @type React.FunctionComponent<FeedItemProps>
+ * @type {React.FunctionComponent<FeedItemProps>}
  */
 const FeedItem = ({feed, onOpenFeed}) => {
 	switch(feed[0]) {
@@ -751,4 +705,86 @@ function openPost(post = undefined) {
  */
 function closePost() {
 	return openPost();
+}
+
+/**
+ * @return {ClearLogsAction}
+ */
+function clearLogs() {
+	return { type: 'CLEAR_LOGS' };
+}
+
+/**
+ * @typedef { import('redux').Reducer<State, Action>} Reducer
+ * @type {Reducer}
+ */
+function reducer(state = { readyState: -1, current: null, nodes: [], log: {}, feeds: [], posts: {} }, action) {
+	switch (action.type) {
+		case 'NODES': {
+			return { ...state, current: action.nodes.current, nodes: action.nodes.nodes };
+		}
+		case 'READY_STATE_CHANGE': {
+			return { ...state, readyState: action.readyState };
+		}
+		case 'CMD': {
+			return {
+				...state,
+				log: {
+					...state.log,
+					[action.descriptor.uuid]: { req: action.descriptor, res: ['pending', Date.now()] },
+				},
+			}
+		}
+		case 'RES': {
+			return {
+				...state,
+				log: {
+					...state.log,
+					[action.descriptor.uuid]: {
+						...state.log[action.descriptor.uuid],
+						res: ['ack', Date.now(), action.descriptor],
+					}
+				}
+			};
+		}
+		case 'DISCOVER': {
+			return {
+				...state,
+				feeds: state.feeds.concat([action.feeds])
+			};
+		}
+		case 'FETCH_FEED_RESULT': {
+			switch(action.feed[0]) {
+				case 'ok': {
+					const feed = action.feed[1];
+					return {
+						...state,
+						posts: feed.entries.reduce(
+							(posts, post) => (
+								{...posts, [post.entry_id]: post}
+							),
+							state.posts
+						)
+					}
+				}
+			}
+			return state;
+		}
+		case 'SET_POST': {
+			return {
+				...state,
+				selectedPost: action.post
+			}
+		}
+		case 'CLEAR_LOGS': {
+			return {
+				...state,
+				log: {},
+				feeds: [],
+			};
+		}
+		default: {
+			return state;
+		}
+	}
 }
